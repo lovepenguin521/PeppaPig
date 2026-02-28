@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EP15 · Picnic 野餐 · 家长外挂攻略</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --pink: #e91e8c; --orange: #f97316; }
+    body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    .tab-btn { transition: all .2s; }
+    .tab-btn.active { background: var(--pink); color: #fff; box-shadow: 0 2px 8px rgba(233,30,140,.35); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .phase-badge { display:inline-block; padding:2px 10px; border-radius:9999px; font-size:.75rem; font-weight:700; letter-spacing:.05em; }
+    .script-box { background:#fff8fc; border-left:4px solid var(--pink); padding:12px 16px; border-radius:0 8px 8px 0; margin:10px 0; font-size:.97rem; line-height:1.8; }
+    .detail-btn { cursor:pointer; background:#fdf2f8; border:1.5px solid #f9a8d4; color:#be185d; padding:4px 14px; border-radius:20px; font-size:.83rem; font-weight:600; transition:all .15s; display:inline-flex; align-items:center; gap:4px; }
+    .detail-btn:hover { background:#fce7f3; border-color:#ec4899; }
+    .score-input { width:80px; border:1.5px solid #f9a8d4; border-radius:8px; padding:4px 8px; font-size:.9rem; text-align:center; outline:none; }
+    .score-input:focus { border-color:#ec4899; box-shadow:0 0 0 2px rgba(236,72,153,.15); }
+    .record-card { background:#fff; border:1px solid #fce7f3; border-radius:10px; padding:12px 16px; margin-bottom:10px; }
+    .record-card .score-tag { display:inline-block; background:#fef3c7; color:#92400e; border-radius:6px; padding:1px 8px; font-size:.8rem; font-weight:700; }
+
+    /* Modal */
+    #modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; }
+    #modal-overlay.open { display:flex; }
+    #modal-box { background:#fff; border-radius:16px; max-width:720px; width:92%; max-height:85vh; overflow-y:auto; padding:28px 28px 24px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+    #modal-close { position:absolute; top:14px; right:18px; font-size:1.5rem; cursor:pointer; color:#9ca3af; background:none; border:none; line-height:1; }
+    #modal-close:hover { color:#374151; }
+    .modal-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+    .modal-table th { background:#fdf2f8; color:#be185d; padding:8px 10px; border:1px solid #fce7f3; text-align:left; }
+    .modal-table td { padding:8px 10px; border:1px solid #f3f4f6; vertical-align:top; line-height:1.6; }
+    .modal-table tr:hover td { background:#fafafa; }
+    .level-block { margin-bottom:14px; padding:10px 14px; border-radius:8px; }
+    .level-1 { background:#fef3c7; border-left:4px solid #f59e0b; }
+    .level-2 { background:#dbeafe; border-left:4px solid #3b82f6; }
+    .level-3 { background:#dcfce7; border-left:4px solid #22c55e; }
+
+    /* Tables in content */
+    .content-table { width:100%; border-collapse:collapse; font-size:.88rem; margin:10px 0; }
+    .content-table th { background:#fdf2f8; color:#be185d; padding:7px 10px; border:1px solid #fce7f3; }
+    .content-table td { padding:7px 10px; border:1px solid #f3f4f6; line-height:1.6; vertical-align:top; }
+
+    /* Record section */
+    .record-section { background:#fff; border:2px dashed #f9a8d4; border-radius:12px; padding:18px 20px; margin-top:28px; }
+    .record-section h3 { color:#be185d; font-size:1rem; font-weight:700; margin-bottom:12px; }
+
+    /* Print */
+    @media print {
+      @page { margin:1.4cm; size:A4; }
+
+      /* Hide interactive/nav elements */
+      .no-print, nav, #modal-overlay, .detail-btn, .record-section, button { display:none !important; }
+      header { position:static !important; box-shadow:none !important; border-bottom:1px solid #ddd; }
+
+      /* Show all panels */
+      .tab-panel { display:block !important; }
+      body { background:#fff !important; font-size:9pt; line-height:1.35; }
+      main { padding:0 !important; max-width:100% !important; }
+
+      /* Compact phase badge row */
+      .mb-2 { margin-bottom:3px !important; }
+      .phase-badge { font-size:7.5pt !important; padding:1px 7px !important; }
+
+      /* Card compaction */
+      .bg-white.rounded-xl { box-shadow:none !important; border:1px solid #d1d5db !important; border-radius:3px !important; page-break-inside:avoid; }
+      .shadow-sm { box-shadow:none !important; }
+      .rounded-xl { border-radius:3px !important; }
+      .rounded-lg { border-radius:2px !important; }
+      .p-5 { padding:5px 8px !important; }
+      .p-3 { padding:3px 6px !important; }
+      .mb-4 { margin-bottom:5px !important; }
+      .mb-3 { margin-bottom:3px !important; }
+      .mt-3 { margin-top:3px !important; }
+      .space-y-3>*+* { margin-top:3px !important; }
+      .space-y-2>*+* { margin-top:2px !important; }
+
+      /* Typography */
+      h2, .text-base { font-size:9.5pt !important; margin-bottom:2px !important; }
+      .text-sm { font-size:8.5pt !important; }
+      .text-xs { font-size:7.5pt !important; }
+      .text-2xl { font-size:13pt !important; }
+      .leading-tight { line-height:1.2 !important; }
+
+      /* Script box tighter */
+      .script-box { padding:3px 8px !important; margin:3px 0 !important; line-height:1.4 !important; font-size:8.5pt !important; background:#f9f9f9 !important; border-color:#bbb !important; }
+
+      /* Tables */
+      .content-table th, .content-table td { padding:3px 5px !important; font-size:8pt !important; }
+      tr { page-break-inside:avoid; }
+
+      /* Page break: each tab starts fresh page */
+      #tab-phase1 { page-break-before:always; }
+      #tab-phase2 { page-break-before:always; }
+      #tab-phase3 { page-break-before:always; }
+      #tab-phase4 { page-break-before:always; }
+      #tab-phase5 { page-break-before:always; }
+      #tab-phase6 { page-break-before:always; }
+      #tab-summary { page-break-before:always; }
+    }
+  </style>
+</head>
+<body class="bg-pink-50 min-h-screen">
+
+<!-- ===== HEADER ===== -->
+<header class="bg-white shadow-sm sticky top-0 z-50 no-print">
+  <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🐷</span>
+        <div>
+          <h1 class="text-lg font-black text-pink-600 leading-tight">EP15 · Picnic 野餐</h1>
+          <p class="text-xs text-gray-500">家长外挂攻略 v2 深度版 · 约30分钟 · KET入门词汇</p>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="window.print()" class="no-print text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg font-medium flex items-center gap-1">
+        🖨️ 打印
+      </button>
+    </div>
+  </div>
+  <!-- Flow bar -->
+  <div class="bg-pink-50 border-t border-pink-100 px-4 py-1.5 text-xs text-pink-600 font-mono overflow-x-auto whitespace-nowrap">
+    Phase1 IGNITE 3min · Phase2 WATCH 6min · Phase3 REACT 5min · Phase4 PLAY 12min · Phase5 OUTPUT 3min · Phase6 LOCK 1min · 合计30min
+  </div>
+</header>
+
+<!-- ===== TAB NAV ===== -->
+<nav class="bg-white border-b border-pink-100 sticky top-[72px] z-40 no-print overflow-x-auto">
+  <div class="max-w-5xl mx-auto px-2 flex gap-1 py-2">
+    <button class="tab-btn active px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('knowledge',this)">📚 知识速览</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase1',this)">🔥 Phase 1</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase2',this)">👀 Phase 2</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase3',this)">💬 Phase 3</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase4',this)">🎮 Phase 4</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase5',this)">🎤 Phase 5</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase6',this)">🔒 Phase 6</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('summary',this)">🏆 通关标准</button>
+  </div>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="max-w-5xl mx-auto px-4 py-6">
+
+<!-- ==================== 知识速览 ==================== -->
+<div id="tab-knowledge" class="tab-panel active">
+  <div class="mb-2 flex items-center gap-2">
+    <span class="phase-badge bg-pink-100 text-pink-700">家长开课前速览 · 30秒</span>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-pink-600 mb-3">核心 KET 词汇</h2>
+    <div class="overflow-x-auto">
+      <table class="content-table">
+        <thead><tr><th>单词</th><th>音标</th><th>词性</th><th>中文</th><th>记忆动作</th></tr></thead>
+        <tbody>
+          <tr><td><strong>wasp</strong></td><td>/wɒsp/</td><td>n.</td><td>黄蜂</td><td>伸出一根手指飞来飞去，嘴里 "Bzzzz~"</td></tr>
+          <tr><td><strong>exercise</strong></td><td>/ˈeksəsaɪz/</td><td>n./v.</td><td>锻炼</td><td>夸张地原地跑步，越来越慢，最后瘫倒</td></tr>
+          <tr><td><strong>delicious</strong></td><td>/dɪˈlɪʃəs/</td><td>adj.</td><td>美味的</td><td>闭眼揉肚子，发出 "Mmm~" 的满足声</td></tr>
+          <tr><td><strong>sleepy</strong></td><td>/ˈsliːpi/</td><td>adj.</td><td>困的</td><td>慢慢闭眼，头歪向一侧</td></tr>
+          <tr><td><strong>feed</strong></td><td>/fiːd/</td><td>v.</td><td>喂食</td><td>手心朝上，一小撮一小撮向前抛</td></tr>
+          <tr><td><strong>waddle</strong></td><td>/ˈwɒdl/</td><td>v.</td><td>摇摆走路</td><td>双脚并拢左右大幅摇摆，嘴里 "Quack！"</td></tr>
+          <tr><td><strong>blanket</strong></td><td>/ˈblæŋkɪt/</td><td>n.</td><td>毯子</td><td>双臂大开，猛地向两侧展开，"Swoosh！"</td></tr>
+          <tr><td><strong>homemade</strong></td><td>/ˌhəʊmˈmeɪd/</td><td>adj.</td><td>自制的</td><td>指着厨房，做出揉面团的动作</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-pink-600 mb-3">核心句型（本集高频）</h2>
+    <div class="overflow-x-auto">
+      <table class="content-table">
+        <thead><tr><th>句型</th><th>中文意思</th><th>剧中例句</th></tr></thead>
+        <tbody>
+          <tr><td><strong>So much for...</strong></td><td>就这？说好的呢</td><td>So much for Daddy Pig and his exercise.</td></tr>
+          <tr><td><strong>What a fuss!</strong></td><td>大惊小怪！</td><td>What a fuss! It's only a little wasp.</td></tr>
+          <tr><td><strong>It's only a little...</strong></td><td>不就是一点小...嘛</td><td>It's only a little wasp.</td></tr>
+          <tr><td><strong>I managed to...</strong></td><td>我设法做到了</td><td>I managed to hang on to my cake.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <h2 class="text-base font-black text-pink-600 mb-3">本集教学目标</h2>
+    <div class="space-y-2">
+      <div class="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+        <span class="text-yellow-500 font-bold text-sm mt-0.5">最低</span>
+        <p class="text-sm">孩子能用 <strong>3 个词</strong>说出剧情（wasp / run / cake）</p>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <span class="text-blue-500 font-bold text-sm mt-0.5">中等</span>
+        <p class="text-sm">孩子能用 <strong>3 句话</strong>讲故事（哪怕中英混杂）</p>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+        <span class="text-green-500 font-bold text-sm mt-0.5">理想</span>
+        <p class="text-sm">孩子主动用 <strong>"So much for..."</strong> 或 <strong>"It's only a..."</strong> 造一句新句子</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 1 ==================== -->
+<div id="tab-phase1" class="tab-panel">
+  <div class="mb-2 flex items-center gap-2">
+    <span class="phase-badge bg-orange-100 text-orange-700">🔥 IGNITE 点火 · 3分钟</span>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-orange-600 mb-1">上集复盘钩（1分钟）</h2>
+    <p class="text-xs text-gray-500 mb-3">上集第14集《Washing》孩子学过 <code class="bg-gray-100 px-1 rounded">muddy</code> 和 <code class="bg-gray-100 px-1 rounded">dirty</code>。用<strong>故意说错</strong>触发纠正本能，不要问"你还记得吗"。</p>
+    <div class="script-box">
+      <p>家长一脸认真地说：</p>
+      <p class="mt-2 text-pink-700 font-semibold">"上次 Peppa 在泥坑里跳，Daddy Pig 说：'I am very <u>clean</u>！'"</p>
+      <p class="text-xs text-gray-500 mt-1">（故意说错，表情严肃）</p>
+    </div>
+    <div class="mt-3 p-3 bg-green-50 rounded-lg border border-green-200 text-sm">
+      <p>孩子一定会喊："不对！是 <strong>dirty！ / muddy！</strong>"</p>
+      <p class="mt-1 text-gray-600">家长："对！<strong>Dirty！Muddy！</strong> Great. 你还记得上次的！"</p>
+      <p class="text-xs text-gray-400 mt-1">上集词汇复盘完成，耗时约 20 秒</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-orange-600 mb-1">本集悬念预告（2分钟）</h2>
+    <p class="text-xs text-gray-500 mb-3">家长站起来，手指做出飞的姿势，嘴里 <code>Bzzzz~</code>，突然往孩子方向冲过去——</p>
+    <div class="script-box">
+      <p class="text-pink-700 font-semibold">"Today! Someone in the Pig family..."</p>
+      <p class="text-xs text-gray-500">（停顿，做出抱头狂跑的样子）</p>
+      <p class="text-pink-700 font-semibold mt-1">"...is going to be CHASED by something VERY. VERY. TINY."</p>
+    </div>
+    <div class="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200 text-sm">
+      <p>用大拇指和小拇指给孩子选：</p>
+      <p class="mt-1 font-medium">"Is it <strong>Peppa</strong>?"（大拇指）"Or is it <strong>Daddy Pig</strong>?"（小拇指）</p>
+    </div>
+    <div class="script-box mt-3">
+      <p class="text-xs text-gray-500">孩子选完后，家长压低声音交代看片任务：</p>
+      <p class="text-pink-700 font-semibold mt-1">"Your mission while watching: count how many times Daddy Pig RUNS AWAY. Use your fingers. Ready? Go."</p>
+    </div>
+  </div>
+
+  <div id="record-phase1" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3">
+      <label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase1" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="记录孩子今天的表现、说了什么、做了什么动作…"></textarea>
+    </div>
+    <div class="mb-3 flex items-center gap-3">
+      <label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase1" class="score-input" placeholder="选填" min="0">
+    </div>
+    <button onclick="saveRecord('phase1')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase1" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 2 ==================== -->
+<div id="tab-phase2" class="tab-panel">
+  <div class="mb-2 flex items-center gap-2">
+    <span class="phase-badge bg-blue-100 text-blue-700">👀 WATCH 观看 · 6分钟</span>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-blue-600 mb-3">播放设置</h2>
+    <div class="flex gap-3">
+      <div class="flex-1 p-3 bg-blue-50 rounded-lg text-center border border-blue-200">
+        <div class="text-2xl">🔤</div>
+        <div class="text-sm font-bold text-blue-700 mt-1">英文音轨</div>
+      </div>
+      <div class="flex-1 p-3 bg-blue-50 rounded-lg text-center border border-blue-200">
+        <div class="text-2xl">📝</div>
+        <div class="text-sm font-bold text-blue-700 mt-1">英文字幕</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-blue-600 mb-2">家长片中任务</h2>
+    <p class="text-xs text-gray-500 mb-3">只用身体反应，不说话，让孩子自己感受语境</p>
+    <div class="space-y-3">
+      <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+        <span class="text-lg mt-0.5">😴</span>
+        <div class="text-sm">Daddy Pig 说完要运动就睡着 → <strong>家长慢慢闭眼，夸张地靠向沙发</strong></div>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+        <span class="text-lg mt-0.5">🐝</span>
+        <div class="text-sm">黄蜂出现 → <strong>家长夸张地缩起来，发出小声的 "Eeek..."</strong></div>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
+        <span class="text-lg mt-0.5">🏃</span>
+        <div class="text-sm">Daddy Pig 狂跑 → <strong>家长忍着笑，偷偷瞄孩子脸上的反应</strong></div>
+      </div>
+    </div>
+    <div class="mt-3 p-3 bg-pink-50 rounded-lg border border-pink-200 text-sm text-pink-700 font-medium">
+      看完之后，<strong>不要问"你看懂了吗"</strong>。直接站起来，进 Phase 3。
+    </div>
+  </div>
+
+  <div id="record-phase2" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3">
+      <label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase2" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="观看过程中孩子的表情、动作、自发的笑声…"></textarea>
+    </div>
+    <div class="mb-3 flex items-center gap-3">
+      <label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase2" class="score-input" placeholder="选填" min="0">
+    </div>
+    <button onclick="saveRecord('phase2')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase2" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 3 ==================== -->
+<div id="tab-phase3" class="tab-panel">
+  <div class="mb-2 flex items-center gap-2">
+    <span class="phase-badge bg-green-100 text-green-700">💬 REACT 反应 · 5分钟</span>
+  </div>
+  <div class="mb-3 p-3 bg-green-50 rounded-lg border border-green-200 text-sm text-green-800">
+    这一整个 Phase 都是"聊天"，不是考试。家长全程用英文说，孩子用中文或英文回答都算。<br/>
+    核心任务：<strong>读孩子的脸</strong>。眼神亮 → 继续；眼神空洞 → 立刻降级。
+  </div>
+
+  <!-- A. 理解确认 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-green-600">A. 理解确认（约2分钟）</h2>
+      <button class="detail-btn" onclick="openModal('phase3a')">📋 查看应答表</button>
+    </div>
+    <p class="text-xs text-gray-500 mb-3">确认孩子理解了剧情，但用"聊天"的方式，不用"提问"的方式。</p>
+
+    <div class="space-y-3">
+      <div class="p-3 bg-gray-50 rounded-lg border">
+        <div class="text-xs font-bold text-gray-400 mb-1">问题 1 · Yes/No 兜底，绝对能回答</div>
+        <div class="script-box">
+          <p>家长做出疑惑脸，双手一摊：</p>
+          <p class="text-pink-700 font-semibold mt-1">"So... did Daddy Pig actually exercise? Yes or no?"</p>
+        </div>
+      </div>
+      <div class="p-3 bg-gray-50 rounded-lg border">
+        <div class="text-xs font-bold text-gray-400 mb-1">问题 2 · 二选一，孩子永远有话说</div>
+        <div class="script-box">
+          <p class="text-pink-700 font-semibold">"Was Daddy Pig scared of the wasp... or was he BRAVE?"</p>
+          <p class="text-xs text-gray-500 mt-1">"scared" 时做出缩起来发抖的动作；"brave" 时做出超级英雄的pose</p>
+        </div>
+      </div>
+      <div class="p-3 bg-gray-50 rounded-lg border">
+        <div class="text-xs font-bold text-gray-400 mb-1">问题 3 · 开放式，孩子怎么答都行</div>
+        <div class="script-box">
+          <p class="text-pink-700 font-semibold">"If YOU were there, and a wasp landed on YOUR cake... what would YOU do?"</p>
+          <p class="text-xs text-gray-500 mt-1">指着孩子，然后做出黄蜂飞来的手势</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B. 情感连接 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-green-600">B. 情感连接（约1分钟）</h2>
+      <button class="detail-btn" onclick="openModal('phase3b')">📋 查看应答表</button>
+    </div>
+    <p class="text-xs text-gray-500 mb-3">把剧情和孩子自己的生活挂钩，这是语言迁移的触发点。</p>
+    <div class="script-box">
+      <p>家长做出先举拳头喊口号、然后瞬间倒头睡的对比动作，问：</p>
+      <p class="text-pink-700 font-semibold mt-2">"Have YOU ever said... 'I'm going to exercise!'..."</p>
+      <p class="text-xs text-gray-500">（举拳头，慷慨激昂）</p>
+      <p class="text-pink-700 font-semibold">"...and then just..."</p>
+      <p class="text-xs text-gray-500">（瞬间倒向沙发，发出呼噜声）</p>
+      <p class="text-pink-700 font-semibold">"...fell asleep？"</p>
+    </div>
+  </div>
+
+  <!-- C. 角色代入 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-green-600">C. 角色代入（约1分钟）</h2>
+      <button class="detail-btn" onclick="openModal('phase3c')">📋 查看应答表</button>
+    </div>
+    <p class="text-xs text-gray-500 mb-3">让孩子站进角色立场，用第一人称说出本集词汇。</p>
+    <div class="script-box">
+      <p>家长拿出一个想象中的"麦克风"，走到孩子面前：</p>
+      <p class="text-pink-700 font-semibold mt-2">"Excuse me！ Are you Daddy Pig？"</p>
+      <p class="text-pink-700 font-semibold">"I'm a reporter. Can I ask — after the wasp incident..."</p>
+      <p class="text-xs text-gray-500">（做出黄蜂追人的动作）</p>
+      <p class="text-pink-700 font-semibold">"...how do you FEEL？"</p>
+    </div>
+  </div>
+
+  <!-- D. Recast -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-green-600">D. Recast 参考表</h2>
+      <button class="detail-btn" onclick="openModal('phase3d')">📋 查看完整表格</button>
+    </div>
+    <div class="p-3 bg-green-50 rounded-lg border border-green-200 text-sm text-green-800">
+      <strong>原则</strong>：孩子说错时，家长不说"错了"，直接用正确形式接话，孩子自然就听到了正确版本。
+    </div>
+  </div>
+
+  <div id="record-phase3" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3">
+      <label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase3" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="孩子回答了哪些问题？有没有主动说英文？哪个问题最有效？"></textarea>
+    </div>
+    <div class="mb-3 flex items-center gap-3">
+      <label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase3" class="score-input" placeholder="选填" min="0">
+    </div>
+    <button onclick="saveRecord('phase3')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase3" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 4 ==================== -->
+<div id="tab-phase4" class="tab-panel">
+  <div class="mb-2 flex items-center gap-2">
+    <span class="phase-badge bg-purple-100 text-purple-700">🎮 PLAY 玩起来 · 12分钟</span>
+  </div>
+
+  <!-- TPR -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-purple-600 mb-1">TPR 热身（4分钟）</h2>
+    <p class="text-xs text-gray-500 mb-3">第一轮家长考孩子，第二轮孩子当考官——家长做错孩子得1分，满3分孩子赢！</p>
+    <div class="space-y-2">
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <p class="font-bold text-purple-800 text-sm">"Spread the picnic blanket!"</p>
+        <p class="text-xs text-gray-600 mt-1">双臂大开向两侧猛地展开，喊一声 "Swoosh！"</p>
+      </div>
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <p class="font-bold text-purple-800 text-sm">"I'm really hungry! Let's eat!"</p>
+        <p class="text-xs text-gray-600 mt-1">揉肚子，然后夸张地大口咬东西，一边吃一边发出 "Mmm！Mmm！"</p>
+      </div>
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <p class="font-bold text-purple-800 text-sm">"I feel quite sleepy."</p>
+        <p class="text-xs text-gray-600 mt-1">抱臂靠向沙发/墙壁，慢慢闭眼，发出呼噜声 "Zzzzzzz..."</p>
+      </div>
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <p class="font-bold text-purple-800 text-sm">"Feed the ducks!"</p>
+        <p class="text-xs text-gray-600 mt-1">蹲低，一只手不停向前抛，嘴里喊 "Here you go！Quack quack！"</p>
+      </div>
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <p class="font-bold text-purple-800 text-sm">"Waddle like a duck!"</p>
+        <p class="text-xs text-gray-600 mt-1">双脚并拢，左右大幅摇摆走路，嘴里不停 "Quack quack！"</p>
+      </div>
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <p class="font-bold text-purple-800 text-sm">"Eeek! A wasp! Run away!"</p>
+        <p class="text-xs text-gray-600 mt-1">先尖叫一声 "EEEK！"，然后疯狂原地跑，双手在头顶乱挥，喊 "Shoo！Shoo！"</p>
+      </div>
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <p class="font-bold text-purple-800 text-sm">"Stay still! Don't move!"</p>
+        <p class="text-xs text-gray-600 mt-1">全身瞬间僵住，屏住呼吸，连眼睛都不能眨。谁先动谁输！</p>
+      </div>
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <p class="font-bold text-purple-800 text-sm">"Run around and get some exercise!"</p>
+        <p class="text-xs text-gray-600 mt-1">原地跑步，越跑越慢，最后夸张地瘫倒在沙发上大喊 "I'm so tired！"</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 静音配音 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-purple-600 mb-1">静音配音大乱斗（5分钟）</h2>
+    <p class="text-xs text-gray-500 mb-1">重新播放动画，在下面几个画面<strong>按暂停</strong>，孩子配音。情绪到位就算赢，不用背原台词。</p>
+    <div class="flex gap-4 text-xs mb-3">
+      <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded font-bold">L1 情绪音/拟声词</span>
+      <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded font-bold">L2 关键词1-2个</span>
+      <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded font-bold">L3 完整句子</span>
+    </div>
+    <div class="space-y-3">
+      <div class="p-3 border rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm font-bold text-gray-700">画面① · 约第2分30秒</div>
+          <button class="detail-btn" onclick="openModal('dub1')">🎬 查看脚手架</button>
+        </div>
+        <p class="text-xs text-gray-600">Daddy Pig 刚说完"我要去运动！"，下一秒就在野餐毯上睡着了。</p>
+      </div>
+      <div class="p-3 border rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm font-bold text-gray-700">画面② · 约第3分50秒</div>
+          <button class="detail-btn" onclick="openModal('dub2')">🎬 查看脚手架</button>
+        </div>
+        <p class="text-xs text-gray-600">Mummy Pig 发现一只黄蜂飞到蛋糕上，猛地跳起来尖叫，裙子都飞起来了。</p>
+      </div>
+      <div class="p-3 border rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm font-bold text-gray-700">画面③ · 约第4分20秒</div>
+          <button class="detail-btn" onclick="openModal('dub3')">🎬 查看脚手架</button>
+        </div>
+        <p class="text-xs text-gray-600">Daddy Pig 被黄蜂追着满草地乱跑，双手乱挥，边跑边喊边绕圈。</p>
+      </div>
+      <div class="p-3 border rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm font-bold text-gray-700">画面④ · 约第5分10秒</div>
+          <button class="detail-btn" onclick="openModal('dub4')">🎬 查看脚手架</button>
+        </div>
+        <p class="text-xs text-gray-600">满头大汗的 Daddy Pig 跑回来，得意地举起那块他死活没松手的草莓蛋糕，一脸骄傲。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Find the Bugs -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-purple-600">Find the Bugs（3分钟）</h2>
+      <button class="detail-btn" onclick="openModal('bugs')">🐛 查看全部5句</button>
+    </div>
+    <div class="p-3 bg-purple-50 rounded-lg border border-purple-200 text-sm">
+      <p><strong>规则</strong>：家长大声朗读下面5句话，有些含故意放入的Bug词。孩子听完整句再拍桌子喊出正确词。</p>
+      <p class="mt-1 text-red-600 font-medium">⚠️ 第3句是正确原句，孩子要喊 "No bugs! Correct!"，乱喊扣1分！</p>
+      <p class="mt-1 text-gray-500 text-xs">朗读顺序：Bug版 → 孩子喊正确词 → 家长读正确版收尾</p>
+    </div>
+  </div>
+
+  <div id="record-phase4" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3">
+      <label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase4" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="TPR哪个动作最嗨？配音达到哪个Level？Find the Bugs扣分了吗？"></textarea>
+    </div>
+    <div class="mb-3 flex items-center gap-3">
+      <label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase4" class="score-input" placeholder="选填" min="0">
+    </div>
+    <button onclick="saveRecord('phase4')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase4" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 5 ==================== -->
+<div id="tab-phase5" class="tab-panel">
+  <div class="mb-2 flex items-center gap-2">
+    <span class="phase-badge bg-teal-100 text-teal-700">🎤 OUTPUT 自由产出 · 3分钟</span>
+  </div>
+  <div class="mb-3 p-3 bg-teal-50 rounded-lg border border-teal-200 text-sm text-teal-800">
+    孩子用自己的话输出故事。这是语言进入<strong>长期记忆</strong>的最后一步，也是整堂课最重要的3分钟。
+  </div>
+
+  <!-- A. 3句话讲故事 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-teal-600">A. 3句话讲故事</h2>
+      <button class="detail-btn" onclick="openModal('story')">📖 查看3级示例</button>
+    </div>
+    <div class="script-box">
+      <p>家长扮演"刚从火星回来的外星人"：</p>
+      <p class="text-pink-700 font-semibold mt-1">"I just landed from Mars. I have NO idea what happened here. Can you tell me the story？ Just 3 sentences. Go！"</p>
+    </div>
+    <div class="mt-3">
+      <button class="detail-btn" onclick="openModal('scaffold')">🪜 脚手架救场</button>
+      <span class="text-xs text-gray-400 ml-2">孩子卡壳时用</span>
+    </div>
+  </div>
+
+  <!-- B. 角色扮演 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-teal-600">B. 角色扮演</h2>
+      <button class="detail-btn" onclick="openModal('roleplay')">🎭 查看完整情境</button>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div class="p-3 bg-teal-50 rounded-lg border border-teal-200 text-center">
+        <div class="text-2xl">👧</div>
+        <div class="text-sm font-bold text-teal-700 mt-1">孩子 = Daddy Pig</div>
+        <div class="text-xs text-gray-500">被追的那个</div>
+      </div>
+      <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200 text-center">
+        <div class="text-2xl">🐝</div>
+        <div class="text-sm font-bold text-yellow-700 mt-1">家长 = 黄蜂</div>
+        <div class="text-xs text-gray-500">追人的那个</div>
+      </div>
+    </div>
+    <div class="p-3 bg-orange-50 rounded-lg border border-orange-200 text-sm">
+      <strong>关键工具：T手势（暂停手势）</strong>
+      <p class="mt-1 text-gray-600">家长用两个手指比出T形 = "我现在不是黄蜂，我是家长，说几秒话"。T放下 = 游戏继续。</p>
+    </div>
+    <div class="mt-3">
+      <p class="text-sm font-bold text-teal-700 mb-2">第一轮开场——家长做出飞的手势：</p>
+      <div class="script-box">
+        <p class="text-pink-700 font-semibold">"Bzzzz~！"</p>
+        <p class="text-xs text-gray-500 mt-1">（缓缓靠近孩子，此后家长只扮演黄蜂，不说任何指导语）</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="record-phase5" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3">
+      <label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase5" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="讲故事达到哪个Level？角色扮演中说了哪些英文？有没有自发用到新句型？"></textarea>
+    </div>
+    <div class="mb-3 flex items-center gap-3">
+      <label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase5" class="score-input" placeholder="选填" min="0">
+    </div>
+    <button onclick="saveRecord('phase5')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase5" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 6 ==================== -->
+<div id="tab-phase6" class="tab-panel">
+  <div class="mb-2 flex items-center gap-2">
+    <span class="phase-badge bg-indigo-100 text-indigo-700">🔒 LOCK 锁定收尾 · 1分钟</span>
+  </div>
+  <div class="mb-3 p-2 bg-indigo-50 text-indigo-700 text-xs rounded-lg border border-indigo-200 font-medium">30秒发音规则 · 30秒下集悬念 · 三选一，别贪多</div>
+
+  <!-- 发音规则 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-indigo-600 mb-3">发音规则（选1个玩）</h2>
+    <div class="space-y-3">
+      <div class="p-3 border border-indigo-200 rounded-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-sm font-bold text-indigo-700">规则 1 · <code>wa-</code> 魔法变音</span>
+            <span class="ml-2 text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded">以 wasp 为例</span>
+          </div>
+          <button class="detail-btn" onclick="openModal('phon1')">🔊 查看详情</button>
+        </div>
+        <p class="text-xs text-gray-600 mt-1">w 后面跟 a，a 经常被"拉"成 /ɒ/（和 hot、pot 一样）</p>
+      </div>
+      <div class="p-3 border border-indigo-200 rounded-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-sm font-bold text-indigo-700">规则 2 · <code>ex-</code> 重音决定发音</span>
+            <span class="ml-2 text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded">以 exercise 为例</span>
+          </div>
+          <button class="detail-btn" onclick="openModal('phon2')">🔊 查看详情</button>
+        </div>
+        <p class="text-xs text-gray-600 mt-1">重音压在 EX → x 说 /ks/；EX 轻轻过 → x 说 /gz/</p>
+      </div>
+      <div class="p-3 border border-indigo-200 rounded-lg">
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="text-sm font-bold text-indigo-700">规则 3 · <code>-icious</code> 词族</span>
+            <span class="ml-2 text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded">以 delicious 为例</span>
+          </div>
+          <button class="detail-btn" onclick="openModal('phon3')">🔊 查看详情</button>
+        </div>
+        <p class="text-xs text-gray-600 mt-1">-icious 整个后缀发 /ɪʃəs/，认识一个全族都会读</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下集悬念 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-indigo-600 mb-2">下集悬念钩子（30秒）</h2>
+    <div class="script-box">
+      <p class="text-pink-700 font-semibold">"Next time — Peppa and George are going to a <u>swimming pool</u> for the very first time."</p>
+      <p class="text-xs text-gray-500 mt-1">（做出跳水的动作）</p>
+      <p class="text-pink-700 font-semibold mt-2">"Do you think George will be <u>scared</u>..."</p>
+      <p class="text-xs text-gray-500">（小拇指）</p>
+      <p class="text-pink-700 font-semibold">"...or will he just jump RIGHT IN？"</p>
+      <p class="text-xs text-gray-500">（大拇指，做出纵身一跳的样子）</p>
+    </div>
+    <div class="mt-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-sm text-indigo-700">
+      让孩子投票。不管哪种答案：<strong>"We'll see！ Next time！"</strong>
+    </div>
+  </div>
+
+  <div id="record-phase6" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3">
+      <label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase6" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="选了哪条发音规则？孩子掌握了吗？对下集悬念的投票结果？"></textarea>
+    </div>
+    <div class="mb-3 flex items-center gap-3">
+      <label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase6" class="score-input" placeholder="选填" min="0">
+    </div>
+    <button onclick="saveRecord('phase6')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase6" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ==================== 通关标准 ==================== -->
+<div id="tab-summary" class="tab-panel">
+  <div class="mb-2 flex items-center gap-2">
+    <span class="phase-badge bg-yellow-100 text-yellow-700">🏆 通关标准</span>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-yellow-600 mb-3">通关清单</h2>
+    <div class="space-y-2" id="checklist">
+      <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+        <input type="checkbox" class="mt-0.5 w-4 h-4 accent-pink-500" id="ck1">
+        <span class="text-sm"><strong>Phase 1</strong>：孩子喊出了上集的词 <code>dirty</code> / <code>muddy</code></span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+        <input type="checkbox" class="mt-0.5 w-4 h-4 accent-pink-500" id="ck2">
+        <span class="text-sm"><strong>Phase 2</strong>：孩子用手指数了 Daddy Pig 跑的次数</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+        <input type="checkbox" class="mt-0.5 w-4 h-4 accent-pink-500" id="ck3">
+        <span class="text-sm"><strong>Phase 3</strong>：孩子回答了至少1个问题（哪怕只是 Yes/No）</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+        <input type="checkbox" class="mt-0.5 w-4 h-4 accent-pink-500" id="ck4">
+        <span class="text-sm"><strong>Phase 4</strong>：TPR 当过考官 + 配音每个画面说过至少 Level 1 + Find the Bugs 少于2次扣分</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+        <input type="checkbox" class="mt-0.5 w-4 h-4 accent-pink-500" id="ck5">
+        <span class="text-sm"><strong>Phase 5</strong>：孩子用英文说出了至少3个词讲故事</span>
+      </label>
+      <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+        <input type="checkbox" class="mt-0.5 w-4 h-4 accent-pink-500" id="ck6">
+        <span class="text-sm"><strong>Phase 6</strong>：孩子今天笑了 ✓</span>
+      </label>
+    </div>
+    <div id="result-bar" class="mt-4 p-3 bg-pink-50 rounded-lg border border-pink-200 text-sm text-pink-700 font-medium">六项达到五项 = 本集圆满通关！</div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <h2 class="text-base font-black text-yellow-600 mb-3">核心弹药库（日常复用）</h2>
+    <div class="overflow-x-auto">
+      <table class="content-table">
+        <thead><tr><th>句子</th><th>中文意思</th><th>生活用法示例</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>So much for...！</strong></td>
+            <td>就这？说好的呢</td>
+            <td>孩子说今天一定练琴结果没练：<em>"So much for practicing piano！"</em></td>
+          </tr>
+          <tr>
+            <td><strong>What a fuss！</strong></td>
+            <td>大惊小怪！</td>
+            <td>孩子因为碗里有一根葱哭天抹泪：<em>"What a fuss！ It's only a little onion."</em></td>
+          </tr>
+          <tr>
+            <td><strong>It's only a little...</strong></td>
+            <td>不就是一点小...嘛</td>
+            <td>孩子摔了点皮：<em>"It's only a little scratch. You're fine！"</em></td>
+          </tr>
+          <tr>
+            <td><strong>I managed to...</strong></td>
+            <td>我设法做到了</td>
+            <td>孩子终于把难题做出来：<em>"You managed to solve it！ Great job！"</em></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ===== MODAL ===== -->
+<div id="modal-overlay" onclick="closeModalOnBg(event)">
+  <div id="modal-box">
+    <button id="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ===== MODAL CONTENT TEMPLATES ===== -->
+<template id="tpl-phase3a">
+  <h2 class="text-lg font-black text-pink-600 mb-4">理解确认 · 应答对照表</h2>
+
+  <h3 class="font-bold text-gray-700 mb-2">问题 1 · "Did Daddy Pig actually exercise?"</h3>
+  <table class="modal-table mb-4">
+    <thead><tr><th>孩子回答</th><th>家长接话</th></tr></thead>
+    <tbody>
+      <tr><td>"No！" / 摇头</td><td>"NO！ Zero exercise！ He just... <em>（做出呼呼大睡的样子）</em> ...Zzzzz！ So much for Daddy Pig！"</td></tr>
+      <tr><td>"Yes！" / 点头</td><td><em>（假装震惊）</em>"He exercised?! Wait — the WASP made him run. Does that count as exercise?！" <em>（做出哈哈大笑的表情，等孩子跟着笑）</em></td></tr>
+      <tr><td>不说话 / 耸肩</td><td>家长自己做出先举拳头喊"I will exercise！"，然后立刻假装睡着，再问 "Did he? YES or NO?"</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="font-bold text-gray-700 mb-2">问题 2 · "Was Daddy Pig scared or brave?"</h3>
+  <table class="modal-table mb-4">
+    <thead><tr><th>孩子回答</th><th>家长接话</th></tr></thead>
+    <tbody>
+      <tr><td>"Scared！"</td><td>"VERY scared！ <em>（模仿 Daddy Pig 的大肚子狂跑）</em> His personal trainer was a tiny tiny insect！ Ha！"</td></tr>
+      <tr><td>"Brave！"</td><td><em>（假装认真思考）</em>"Hmmm... he RAN AWAY from the wasp. Is that... brave? Or is that... <em>（做出逃跑动作）</em> ...?" <em>（等孩子自己改口说 scared）</em></td></tr>
+      <tr><td>说中文"害怕"</td><td>"Yes！ SCARED！ Super scared！ <em>（Recast）</em> He was so scared！"</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="font-bold text-gray-700 mb-2">问题 3 · "If YOU were there, what would YOU do?"</h3>
+  <table class="modal-table">
+    <thead><tr><th>孩子回答</th><th>家长接话</th></tr></thead>
+    <tbody>
+      <tr><td>比划打虫子 / 说"打它"</td><td>"Oh！ You'd FIGHT it！ <em>（做出打拳的动作）</em> Brave！ Very brave！ What would you say？ Shoo？ Get away？"</td></tr>
+      <tr><td>说跑 / 比划跑</td><td>"Run away！ Just like Daddy Pig！ <em>（一起做原地跑的动作）</em> SAME！ Ha！"</td></tr>
+      <tr><td>说吃掉蛋糕 / 比划快速吃</td><td>"EAT IT FIRST！ <em>（假装惊喜）</em> Smart！ Very smart！ Before the wasp gets it！ GOOD PLAN！"</td></tr>
+      <tr><td>说"不知道" / 不动</td><td>"OK, I'll show you what I'D do —" <em>（家长自己先疯狂假装跑，然后问）</em> "You? Same? Or different？"</td></tr>
+    </tbody>
+  </table>
+</template>
+
+<template id="tpl-phase3b">
+  <h2 class="text-lg font-black text-pink-600 mb-4">情感连接 · 应答对照表</h2>
+  <p class="text-sm text-gray-600 mb-3">孩子几乎 100% 会把这个问题转移到家长身上。</p>
+  <table class="modal-table">
+    <thead><tr><th>孩子反应</th><th>家长接话</th></tr></thead>
+    <tbody>
+      <tr><td>笑着指家长："是你！"</td><td>"OK OK OK. That's me every Sunday. <strong>So much for exercising！</strong> <em>（自嘲地耸肩）</em>"</td></tr>
+      <tr><td>点头承认自己也这样</td><td>"YES！ Me too！ We are BOTH Daddy Pig！ <em>（两个人一起做大肚子走路的样子）</em>"</td></tr>
+      <tr><td>想起具体的事说中文</td><td>家长用 Recast 接："Oh！ You said you'd practice piano, but then you just... Zzzzz...？ <strong>So much for practicing piano！</strong>"</td></tr>
+      <tr><td>不说话</td><td>"No？ You never do that？ You always exercise？ Wow. You are better than Daddy Pig！" <em>（夸张的崇拜表情，孩子一定忍不住笑）</em></td></tr>
+    </tbody>
+  </table>
+</template>
+
+<template id="tpl-phase3c">
+  <h2 class="text-lg font-black text-pink-600 mb-4">角色代入 · 应答对照表</h2>
+  <p class="text-sm text-gray-600 mb-3">孩子扮演 Daddy Pig，家长问 "how do you FEEL？"</p>
+  <table class="modal-table">
+    <thead><tr><th>孩子反应</th><th>家长接话</th></tr></thead>
+    <tbody>
+      <tr><td>做出跑的动作 / 喊 "Run！"</td><td>"You ran！ You RAN AWAY！ And did you keep your cake？ Did you？" <em>（指向想象中的蛋糕）</em></td></tr>
+      <tr><td>说 "tired" / 喘气</td><td>"Tired！ You're so TIRED！ But — <em>（神秘语气）</em> — did you keep your cake？"</td></tr>
+      <tr><td>说 "scared"</td><td>"Scared！ You were scared！ The wasp was so tiny and Daddy Pig was so—" <em>（停顿，用手比出 Daddy Pig 的大肚子，等孩子接 big / fat）</em></td></tr>
+      <tr><td>说中文 / 不说话</td><td>家长自己先扮演 Daddy Pig："I am Daddy Pig. I am very tired. But I kept my cake！ <em>（骄傲地举起想象中的蛋糕）</em> Now YOU try！ How do you feel？"</td></tr>
+    </tbody>
+  </table>
+</template>
+
+<template id="tpl-phase3d">
+  <h2 class="text-lg font-black text-pink-600 mb-4">Recast 参考表</h2>
+  <p class="text-sm text-gray-600 mb-3">孩子说错时，家长不说"错了"，直接用正确形式接话，孩子自然就听到了正确版本。</p>
+  <table class="modal-table">
+    <thead><tr><th>孩子说</th><th>家长Recast回应</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>"Daddy Pig <u>runned</u> away"</td><td>"Yes！ Daddy Pig <strong>RAN</strong> away！ So fast！"</td><td>不规则动词过去式 ran</td></tr>
+      <tr><td>"the <u>bee</u> chased him"</td><td>"Right！ A <strong>wasp</strong> chased him！ A wasp, not a bee — bzzzz~"</td><td>词汇纠错，带动作</td></tr>
+      <tr><td>"he <u>is</u> scared"</td><td>"He <strong>was</strong> scared！ Super scared！ Poor Daddy Pig！"</td><td>过去时 was</td></tr>
+      <tr><td>"a wasp <u>chase</u> him"</td><td>"Yes！ The wasp <strong>chased</strong> him！ Chased him everywhere！"</td><td>过去时 chased</td></tr>
+      <tr><td>"he sleep on the <u>picnic</u>"</td><td>"He fell asleep <strong>at</strong> the picnic！ On the picnic <strong>blanket</strong>！"</td><td>介词 at + 补充词汇</td></tr>
+      <tr><td>"Daddy Pig <u>fall</u> asleep"</td><td>"Right！ He <strong>fell</strong> asleep！ <em>Boom！</em> Just like that！"</td><td>不规则动词 fell</td></tr>
+      <tr><td>"<u>Mummy</u> Pig scared of wasp"</td><td>"Yes！ <strong>Mummy Pig was</strong> scared of the wasp！"</td><td>补充 be 动词 was</td></tr>
+      <tr><td>"he <u>hold</u> the cake"</td><td>"He <strong>held</strong> on to his cake！ He didn't let go！"</td><td>不规则动词 held</td></tr>
+    </tbody>
+  </table>
+</template>
+
+<template id="tpl-dub1">
+  <h2 class="text-lg font-black text-pink-600 mb-1">画面① 配音脚手架</h2>
+  <p class="text-sm text-gray-500 mb-4">约第2分30秒 · Daddy Pig 刚说完"我要去运动！"，下一秒就在野餐毯上睡着了。</p>
+  <div class="level-block level-1 mb-3"><div class="text-xs font-black text-yellow-700 mb-1">Level 1 · 情绪音（永远可以做到）</div><p class="font-bold text-gray-800">Zzzzz...</p><p class="text-xs text-gray-500 mt-1">边说边倒向一侧</p></div>
+  <div class="level-block level-2 mb-3"><div class="text-xs font-black text-blue-700 mb-1">Level 2 · 关键词</div><p class="font-bold text-gray-800">Sleepy! / So lazy!</p></div>
+  <div class="level-block level-3"><div class="text-xs font-black text-green-700 mb-1">Level 3 · 完整句子</div><p class="font-bold text-gray-800">"I thought you wanted to exercise, Daddy Pig!"</p></div>
+</template>
+
+<template id="tpl-dub2">
+  <h2 class="text-lg font-black text-pink-600 mb-1">画面② 配音脚手架</h2>
+  <p class="text-sm text-gray-500 mb-4">约第3分50秒 · Mummy Pig 发现一只黄蜂飞到蛋糕上，猛地跳起来尖叫，裙子都飞起来了。</p>
+  <div class="level-block level-1 mb-3"><div class="text-xs font-black text-yellow-700 mb-1">Level 1 · 情绪音（声音越尖越好）</div><p class="font-bold text-gray-800">EEEK！</p></div>
+  <div class="level-block level-2 mb-3"><div class="text-xs font-black text-blue-700 mb-1">Level 2 · 关键词</div><p class="font-bold text-gray-800">Wasp! / Help!</p></div>
+  <div class="level-block level-3"><div class="text-xs font-black text-green-700 mb-1">Level 3 · 完整句子</div><p class="font-bold text-gray-800">"Eeek! A wasp! I hate wasps! Shoo!"</p></div>
+</template>
+
+<template id="tpl-dub3">
+  <h2 class="text-lg font-black text-pink-600 mb-1">画面③ 配音脚手架</h2>
+  <p class="text-sm text-gray-500 mb-4">约第4分20秒 · Daddy Pig 被黄蜂追着满草地乱跑，双手乱挥，边跑边喊边绕圈。</p>
+  <div class="level-block level-1 mb-3"><div class="text-xs font-black text-yellow-700 mb-1">Level 1 · 情绪音</div><p class="font-bold text-gray-800">Shoo！</p><p class="text-xs text-gray-500 mt-1">边喊边疯狂挥手</p></div>
+  <div class="level-block level-2 mb-3"><div class="text-xs font-black text-blue-700 mb-1">Level 2 · 关键词</div><p class="font-bold text-gray-800">Run! / Get away!</p></div>
+  <div class="level-block level-3"><div class="text-xs font-black text-green-700 mb-1">Level 3 · 完整句子</div><p class="font-bold text-gray-800">"Shoo! Get it off me! You little pest!"</p></div>
+</template>
+
+<template id="tpl-dub4">
+  <h2 class="text-lg font-black text-pink-600 mb-1">画面④ 配音脚手架</h2>
+  <p class="text-sm text-gray-500 mb-4">约第5分10秒 · 满头大汗的 Daddy Pig 跑回来，得意地举起那块他死活没松手的草莓蛋糕，一脸骄傲。</p>
+  <div class="level-block level-1 mb-3"><div class="text-xs font-black text-yellow-700 mb-1">Level 1 · 情绪音</div><p class="font-bold text-gray-800">My cake！</p><p class="text-xs text-gray-500 mt-1">高举想象中的蛋糕</p></div>
+  <div class="level-block level-2 mb-3"><div class="text-xs font-black text-blue-700 mb-1">Level 2 · 关键词</div><p class="font-bold text-gray-800">I kept it! / The cake is safe!</p></div>
+  <div class="level-block level-3"><div class="text-xs font-black text-green-700 mb-1">Level 3 · 完整句子（原台词）</div><p class="font-bold text-gray-800">"Luckily, I managed to hang on to my slice of strawberry cake!"</p></div>
+</template>
+
+<template id="tpl-bugs">
+  <h2 class="text-lg font-black text-pink-600 mb-2">Find the Bugs · 5句完整版</h2>
+  <p class="text-sm text-red-600 font-medium mb-4">⚠️ 第3句是正确原句，孩子要喊 "No bugs! Correct!"，乱喊扣1分！</p>
+
+  <div class="space-y-3">
+    <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+      <div class="text-xs font-black text-red-500 mb-1">句子 1</div>
+      <p class="text-sm"><strong>家长读（Bug版）</strong>：Mummy's homemade strawberry <span class="text-red-600 font-black line-through">POOP</span> is there, too.</p>
+      <p class="text-sm mt-1 text-green-700"><strong>孩子砸桌喊</strong>：CAKE！</p>
+      <p class="text-sm mt-1 text-gray-500"><strong>正确原句</strong>：Mummy's homemade strawberry <strong>cake</strong> is there, too.</p>
+    </div>
+    <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+      <div class="text-xs font-black text-red-500 mb-1">句子 2</div>
+      <p class="text-sm"><strong>家长读（Bug版）</strong>：My <span class="text-red-600 font-black line-through">BUTT</span> is not big.</p>
+      <p class="text-sm mt-1 text-green-700"><strong>孩子砸桌喊</strong>：TUMMY！</p>
+      <p class="text-sm mt-1 text-gray-500"><strong>正确原句</strong>：My <strong>tummy</strong> is not big. <em>（Daddy Pig 的经典自我欺骗）</em></p>
+    </div>
+    <div class="p-3 bg-green-50 rounded-lg border border-green-400 border-2">
+      <div class="text-xs font-black text-green-600 mb-1">句子 3 · ✅ 无 Bug！</div>
+      <p class="text-sm"><strong>家长原文读</strong>：So much for Daddy Pig and his exercise.</p>
+      <p class="text-sm mt-1 text-green-700 font-bold">孩子要喊：<span class="bg-green-200 px-2 py-0.5 rounded">"No bugs! Correct!"</span></p>
+      <p class="text-sm mt-1 text-red-500">喊错或乱喊 → 扣1分！</p>
+    </div>
+    <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+      <div class="text-xs font-black text-red-500 mb-1">句子 4</div>
+      <p class="text-sm"><strong>家长读（Bug版）</strong>：It's only a little <span class="text-red-600 font-black line-through">T-REX</span>.</p>
+      <p class="text-sm mt-1 text-green-700"><strong>孩子砸桌喊</strong>：WASP！</p>
+      <p class="text-sm mt-1 text-gray-500"><strong>正确原句</strong>：It's only a little <strong>wasp</strong>.</p>
+    </div>
+    <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+      <div class="text-xs font-black text-red-500 mb-1">句子 5</div>
+      <p class="text-sm"><strong>家长读（Bug版）</strong>：You are very lucky <span class="text-red-600 font-black line-through">ZOMBIES</span>.</p>
+      <p class="text-sm mt-1 text-green-700"><strong>孩子砸桌喊</strong>：DUCKS！</p>
+      <p class="text-sm mt-1 text-gray-500"><strong>正确原句</strong>：You are very lucky <strong>ducks</strong>.</p>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-story">
+  <h2 class="text-lg font-black text-pink-600 mb-4">3句话讲故事 · 三级示例</h2>
+  <div class="level-block level-1 mb-3">
+    <div class="text-xs font-black text-yellow-700 mb-1">Level 1 · 合格 — 中英混杂，能用3个关键词串起来就行</div>
+    <p class="font-semibold text-gray-800">"Peppa 家去 picnic. Daddy Pig 说要 exercise 然后睡着了. Wasp 追他，他 run away！"</p>
+    <div class="mt-2 p-2 bg-white rounded border text-xs text-gray-600">
+      家长反应：<em>"YES！ That's the story！ The wasp chased him！ And did he keep his...？"</em>（指向想象中的蛋糕，等孩子补 cake）
+    </div>
+  </div>
+  <div class="level-block level-2 mb-3">
+    <div class="text-xs font-black text-blue-700 mb-1">Level 2 · 良好 — 全英文短句，语法不要求完全正确</div>
+    <p class="font-semibold text-gray-800">"The family went to picnic. Daddy Pig said exercise but he sleep. A wasp chase Daddy Pig and he run very fast."</p>
+    <div class="mt-2 p-2 bg-white rounded border text-xs text-gray-600">
+      家长反应：<em>"Great story！ Very fast！ (Recast) The wasp <strong>chased</strong> him and he <strong>ran</strong> very fast！ And the best part — he kept his <strong>cake</strong>！"</em>
+    </div>
+  </div>
+  <div class="level-block level-3">
+    <div class="text-xs font-black text-green-700 mb-1">Level 3 · 优秀 — 有起承转合，用上本集核心句型</div>
+    <p class="font-semibold text-gray-800">"The Pig family had a picnic. Daddy Pig said he'd exercise, but he fell asleep. Then a wasp chased him everywhere — so much for Daddy Pig!"</p>
+    <div class="mt-2 p-2 bg-white rounded border text-xs text-gray-600">
+      家长反应：<em>"PERFECT！ 'So much for Daddy Pig！' — That's EXACTLY what Peppa said！ You sound just like Peppa！"</em>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-scaffold">
+  <h2 class="text-lg font-black text-pink-600 mb-4">脚手架救场 · 孩子卡壳时用</h2>
+  <table class="modal-table">
+    <thead><tr><th>孩子卡在哪里</th><th>家长怎么救</th></tr></thead>
+    <tbody>
+      <tr><td>第1句说不出来</td><td>"OK, so first... the family went to a... <strong>pic-...</strong>" <em>（停顿，嘴型夸张地等孩子补 picnic）</em></td></tr>
+      <tr><td>第2句说不出来</td><td>"Then Daddy Pig said he wanted to... <strong>ex-er-...</strong>" <em>（做出跑步动作，停顿等孩子补 exercise）</em></td></tr>
+      <tr><td>第3句说不出来</td><td>"But then a tiny thing flew in... <em>Bzzzz~...</em>" <em>（手指做飞的姿势，等孩子喊 wasp）</em></td></tr>
+      <tr><td>完全不开口</td><td>家长自己先说 Level 1 版本，然后说 "Now YOU say it！ Copy me！"</td></tr>
+    </tbody>
+  </table>
+</template>
+
+<template id="tpl-roleplay">
+  <h2 class="text-lg font-black text-pink-600 mb-4">角色扮演 · 完整情境清单</h2>
+  <div class="space-y-3">
+    <div class="p-3 bg-gray-50 rounded-lg border">
+      <div class="text-xs font-black text-gray-500 mb-1">情境 A · 孩子疯狂跑起来（没有说话）</div>
+      <p class="text-xs text-gray-600 mb-1">黄蜂行为：家长跟着追，"Bzzzz~！Bzzzz~！"，追了5秒后比T手势</p>
+      <p class="text-sm font-medium text-pink-700">T："That was great！ You RAN AWAY！ Now say it — 'Run away！'"</p>
+    </div>
+    <div class="p-3 bg-gray-50 rounded-lg border">
+      <div class="text-xs font-black text-gray-500 mb-1">情境 B · 孩子喊 "Shoo！"</div>
+      <p class="text-xs text-gray-600 mb-1">黄蜂行为：夸张地往后退一步，假装被弹开，但又飞回来</p>
+      <p class="text-sm font-medium text-pink-700">T："SHOO！ Yes！ Good！ Now say the whole thing — 'Shoo！ Shoo, wasp！'"</p>
+      <p class="text-xs text-gray-500 mt-1">孩子喊更完整 → 放下T，家长夸张地被"完全吹飞"，倒在沙发上。</p>
+    </div>
+    <div class="p-3 bg-gray-50 rounded-lg border">
+      <div class="text-xs font-black text-gray-500 mb-1">情境 C · 孩子喊 "Run away！" / "Run！"</div>
+      <p class="text-xs text-gray-600 mb-1">黄蜂行为：继续追，越追越快</p>
+      <p class="text-sm font-medium text-pink-700">T："Run away！ Yes！ Now say: 'Get away, wasp！ Get away！'"</p>
+      <p class="text-xs text-gray-500 mt-1">孩子喊出来 → 家长假装被喊声震到，慢慢退飞。</p>
+    </div>
+    <div class="p-3 bg-gray-50 rounded-lg border">
+      <div class="text-xs font-black text-gray-500 mb-1">情境 D · 孩子站着不动（Stay still）</div>
+      <p class="text-xs text-gray-600 mb-1">黄蜂行为：把"飞"的手指慢慢靠近，悬在半空，双方对视，看谁先动</p>
+      <p class="text-sm font-medium text-pink-700">T："Stay still！ Don't move！ Say it — 'Stay still！'"</p>
+      <p class="text-xs text-gray-500 mt-1">孩子说出来 → 家长的手指悄悄飞走，"Bzzzz~..."（声音越来越小）。</p>
+    </div>
+    <div class="p-3 bg-gray-50 rounded-lg border">
+      <div class="text-xs font-black text-gray-500 mb-1">情境 E · 孩子喊 "Get away！ / Get away, wasp！"</div>
+      <p class="text-xs text-gray-600 mb-1">黄蜂行为：假装没听见，继续追</p>
+      <p class="text-sm font-medium text-pink-700">T："Get away！ Louder！ The wasp can't hear you！ Say it again！"</p>
+      <p class="text-xs text-gray-500 mt-1">孩子大声喊 → 家长夸张地被声音"炸飞"，撞向沙发，"OK OK！ I'M LEAVING！"</p>
+      <p class="text-sm font-medium text-pink-700 mt-1">T："Did you keep your cake？ Show me！ Hold up your cake！"</p>
+    </div>
+    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+      <div class="text-xs font-black text-yellow-600 mb-1">情境 F · 孩子完全没反应 / 说中文</div>
+      <p class="text-sm font-medium text-pink-700">T："OK, I'll show you. Now I'm Daddy Pig, YOU are the wasp. Watch what I say."</p>
+      <p class="text-xs text-gray-600 mt-1">互换角色 → 孩子当黄蜂，家长当Daddy Pig，家长示范语言：</p>
+      <p class="text-sm italic text-gray-700 mt-1">"EEEK！ Shoo！ Get away！ Run away！ Stay still... no wait... SHOOOO！"</p>
+      <p class="text-xs text-gray-500 mt-1">孩子看了示范后，再换回来：T："OK, back to you！ YOU are Daddy Pig again. Ready？ 3... 2... 1..."</p>
+    </div>
+    <div class="p-3 bg-teal-50 rounded-lg border border-teal-200">
+      <div class="text-xs font-black text-teal-600 mb-1">第二轮（可选）· 角色完全互换</div>
+      <p class="text-xs text-gray-600">孩子状态好时：孩子当黄蜂，家长当Daddy Pig，家长专心示范语言。</p>
+      <p class="text-sm italic text-gray-700 mt-1">"EEEK！ A wasp！ Stay still... stay still... EEEK it's coming！ Shoo！ Get away！ Run！ — Luckily, I managed to hang on to my cake！"</p>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-phon1">
+  <h2 class="text-lg font-black text-pink-600 mb-2">规则 1 · <code>wa-</code> 魔法变音</h2>
+  <p class="text-sm text-gray-600 mb-3"><code>wasp</code> 读 /wɒsp/。注意 <code>a</code> 不读普通的 /æ/（cat 那个音），而是读 /ɒ/（和 hot、pot 一样）。</p>
+  <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-sm mb-4">
+    <strong>口诀：</strong>"w 后面跟 a，a 变懒，不说 /æ/，说 /ɒ/。"
+  </div>
+  <p class="text-sm font-bold text-gray-700 mb-2">玩法：家长故意把 a 读成 /æ/，孩子纠正到正确发音</p>
+  <table class="modal-table">
+    <thead><tr><th>单词</th><th>错误读法（家长故意）</th><th>正确读法</th><th>规律</th></tr></thead>
+    <tbody>
+      <tr><td><code>wasp</code></td><td>"WA-sp" (/æ/)</td><td><strong>/wɒsp/</strong></td><td>wa → /wɒ/</td></tr>
+      <tr><td><code>wash</code></td><td>"WA-sh" (/æ/)</td><td><strong>/wɒʃ/</strong></td><td>wa → /wɒ/</td></tr>
+      <tr><td><code>want</code></td><td>"WA-nt" (/æ/)</td><td><strong>/wɒnt/</strong></td><td>wa → /wɒ/</td></tr>
+      <tr><td><code>watch</code></td><td>"WA-tch" (/æ/)</td><td><strong>/wɒtʃ/</strong></td><td>wa → /wɒ/</td></tr>
+      <tr><td><code>swap</code></td><td>"SWA-p" (/æ/)</td><td><strong>/swɒp/</strong></td><td>swa → /swɒ/</td></tr>
+      <tr><td><code>swamp</code></td><td>"SWA-mp" (/æ/)</td><td><strong>/swɒmp/</strong></td><td>swa → /swɒ/</td></tr>
+    </tbody>
+  </table>
+</template>
+
+<template id="tpl-phon2">
+  <h2 class="text-lg font-black text-pink-600 mb-2">规则 2 · <code>ex-</code> 重音决定发音</h2>
+  <p class="text-sm text-gray-600 mb-3"><code>exercise</code> 读 /ˈeksəsaɪz/，重音在第一个音节 <strong>EX</strong>，<code>x</code> 发 /ks/。</p>
+  <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-sm mb-4">
+    <strong>口诀：</strong>"重音压在 EX，x 说 /ks/；EX 轻轻过，x 说 /gz/。"
+  </div>
+  <table class="modal-table mb-4">
+    <thead><tr><th>规律</th><th>例词</th><th>重音位置</th><th>x 的读法</th></tr></thead>
+    <tbody>
+      <tr><td><strong>EX-</strong> 是重读音节</td><td>EXercise / EXcellent / EXit / EXtra</td><td>重音在 EX</td><td><strong>/ks/</strong></td></tr>
+      <tr><td><strong>ex-</strong> 是轻读音节</td><td>exACT / exAM / exIST / exAMPle</td><td>重音在后面</td><td><strong>/gz/</strong></td></tr>
+    </tbody>
+  </table>
+  <p class="text-sm font-bold text-gray-700 mb-2">玩法：家长读出单词，孩子先大声把重音那个音节喊出来，再判断 x 的发音</p>
+  <div class="space-y-1 text-sm">
+    <p>"<strong>EX</strong>-ercise！"→ 孩子重读 EX，喊 <span class="text-green-600 font-bold">"/ks/！"</span> ✓</p>
+    <p>"ex-<strong>AM</strong>！" → 孩子重读 AM，喊 <span class="text-green-600 font-bold">"/gz/！"</span> ✓</p>
+    <p>"<strong>EX</strong>-it！" → 孩子重读 EX，喊 <span class="text-green-600 font-bold">"/ks/！"</span> ✓</p>
+    <p>"ex-<strong>ACT</strong>！" → 孩子重读 ACT，喊 <span class="text-green-600 font-bold">"/gz/！"</span> ✓</p>
+  </div>
+</template>
+
+<template id="tpl-phon3">
+  <h2 class="text-lg font-black text-pink-600 mb-2">规则 3 · <code>-icious</code> 词族</h2>
+  <p class="text-sm text-gray-600 mb-3"><code>delicious</code> 读 /dɪˈlɪʃəs/，<code>-icious</code> 整个后缀发 /ɪʃəs/。认识一个，全族都会读。</p>
+  <table class="modal-table mb-4">
+    <thead><tr><th>单词</th><th>读法</th><th>中文</th><th>配合动作</th></tr></thead>
+    <tbody>
+      <tr><td><strong>delicious</strong></td><td>/dɪˈlɪʃəs/</td><td>美味的</td><td>揉肚子，眯眼 "Mmm~"</td></tr>
+      <tr><td><strong>suspicious</strong></td><td>/səˈspɪʃəs/</td><td>可疑的</td><td>眯起一只眼，斜看对方</td></tr>
+      <tr><td><strong>vicious</strong></td><td>/ˈvɪʃəs/</td><td>凶猛的</td><td>做出龇牙的老虎样</td></tr>
+      <tr><td><strong>malicious</strong></td><td>/məˈlɪʃəs/</td><td>恶意的</td><td>搓手，做出坏人笑</td></tr>
+    </tbody>
+  </table>
+  <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-sm">
+    <strong>玩法</strong>：家长读单词，孩子用动作表演意思，不用说中文。<br/>
+    "Delicious！" → 揉肚子 | "Suspicious！" → 斜眼看 | "Vicious！" → 老虎 | "Malicious！" → 坏人笑
+  </div>
+</template>
+
+<!-- ===== SCRIPTS ===== -->
+<script>
+  // ---- Tab switching ----
+  function showTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    if (btn) btn.classList.add('active');
+    // Load records if it's a phase tab
+    const phases = ['phase1','phase2','phase3','phase4','phase5','phase6'];
+    if (phases.includes(id)) loadRecords(id);
+  }
+
+  // ---- Modal ----
+  function openModal(key) {
+    const tpl = document.getElementById('tpl-' + key);
+    if (!tpl) return;
+    document.getElementById('modal-body').innerHTML = tpl.innerHTML;
+    document.getElementById('modal-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function closeModalOnBg(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ---- Save record ----
+  async function saveRecord(phase) {
+    const reaction = document.getElementById('reaction-' + phase).value.trim();
+    const scoreRaw = document.getElementById('score-' + phase).value.trim();
+    const score = scoreRaw !== '' ? parseInt(scoreRaw, 10) : 0;
+    if (!reaction && scoreRaw === '') {
+      alert('请填写孩子反应或得分后再保存～');
+      return;
+    }
+    try {
+      const res = await fetch('/api/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phase_id: phase, reaction, score })
+      });
+      if (!res.ok) throw new Error('保存失败');
+      const data = await res.json();
+      // Clear form
+      document.getElementById('reaction-' + phase).value = '';
+      document.getElementById('score-' + phase).value = '';
+      // Prepend to history
+      prependRecord(phase, data);
+    } catch(e) {
+      alert('保存失败，请检查服务是否运行：' + e.message);
+    }
+  }
+
+  // ---- Load records ----
+  async function loadRecords(phase) {
+    const container = document.getElementById('history-' + phase);
+    if (!container) return;
+    try {
+      const res = await fetch('/api/records/' + phase);
+      const records = await res.json();
+      container.innerHTML = '';
+      if (records.length === 0) {
+        container.innerHTML = '<p class="text-xs text-gray-400 mt-2">暂无记录，完成本阶段后保存第一条吧～</p>';
+        return;
+      }
+      container.innerHTML = '<h4 class="text-sm font-bold text-gray-500 mb-2">历史记录</h4>';
+      records.forEach(r => prependRecord(phase, r, false));
+    } catch(e) {
+      container.innerHTML = '<p class="text-xs text-red-400 mt-2">加载记录失败</p>';
+    }
+  }
+
+  function prependRecord(phase, record, prepend = true) {
+    const container = document.getElementById('history-' + phase);
+    if (!container.querySelector('h4')) {
+      container.innerHTML = '<h4 class="text-sm font-bold text-gray-500 mb-2">历史记录</h4>';
+    }
+    const noMsg = container.querySelector('p.text-gray-400');
+    if (noMsg) noMsg.remove();
+
+    const scoreHtml = record.score > 0
+      ? `<span class="score-tag">${record.score} 分</span>`
+      : '';
+    const card = document.createElement('div');
+    card.className = 'record-card';
+    card.dataset.id = record.id;
+    card.innerHTML = `
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-2">${scoreHtml}<span class="text-xs text-gray-400">${record.created_at}</span></div>
+        <button onclick="deleteRecord('${phase}', ${record.id})" class="text-xs text-red-300 hover:text-red-500 transition-colors" title="删除">✕</button>
+      </div>
+      <p class="text-sm text-gray-700 leading-relaxed">${escHtml(record.reaction) || '<span class="text-gray-400 italic">（无文字记录）</span>'}</p>
+    `;
+    if (prepend) {
+      container.insertBefore(card, container.children[1]);
+    } else {
+      container.appendChild(card);
+    }
+  }
+
+  async function deleteRecord(phase, id) {
+    if (!confirm('确认删除这条记录？')) return;
+    try {
+      await fetch('/api/records/' + id, { method: 'DELETE' });
+      const card = document.querySelector(`[data-id="${id}"]`);
+      if (card) card.remove();
+    } catch(e) {
+      alert('删除失败');
+    }
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br/>');
+  }
+
+  // ---- Checklist counter ----
+  document.querySelectorAll('#checklist input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', updateResult);
+  });
+  function updateResult() {
+    const total = document.querySelectorAll('#checklist input[type=checkbox]').length;
+    const checked = document.querySelectorAll('#checklist input[type=checkbox]:checked').length;
+    const bar = document.getElementById('result-bar');
+    if (checked >= 5) {
+      bar.className = 'mt-4 p-3 bg-green-50 rounded-lg border border-green-400 text-sm text-green-700 font-bold';
+      bar.textContent = `🎉 ${checked}/${total} 项完成 — 本集圆满通关！太棒了！`;
+    } else if (checked >= 3) {
+      bar.className = 'mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-300 text-sm text-yellow-700 font-medium';
+      bar.textContent = `${checked}/${total} 项完成 — 继续加油，还差 ${5 - checked} 项就通关！`;
+    } else {
+      bar.className = 'mt-4 p-3 bg-pink-50 rounded-lg border border-pink-200 text-sm text-pink-700 font-medium';
+      bar.textContent = `${checked}/${total} 项完成 — 六项达到五项 = 本集圆满通关！`;
+    }
+  }
+
+  // ---- Init: load phase1 records on start ----
+  loadRecords('phase1');
+</script>
+
+</body>
+</html>

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>单词 & 句型库 · 小猪佩奇家长外挂</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+
+    /* Tab */
+    .tab-btn { transition: all .2s; }
+    .tab-btn.active { background: #e91e8c; color: #fff; box-shadow: 0 2px 8px rgba(233,30,140,.35); }
+
+    /* Mastery buttons */
+    .m-btn { transition: all .15s; cursor: pointer; border-radius: 9999px; padding: 2px 10px; font-size: .72rem; font-weight: 700; border: 1.5px solid; }
+    .m-btn-familiar        { border-color: #86efac; color: #166534; background: #f0fdf4; }
+    .m-btn-familiar.active { background: #22c55e; color: #fff; border-color: #22c55e; }
+    .m-btn-normal          { border-color: #fde68a; color: #92400e; background: #fffbeb; }
+    .m-btn-normal.active   { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+    .m-btn-unfamiliar      { border-color: #fca5a5; color: #991b1b; background: #fff1f2; }
+    .m-btn-unfamiliar.active { background: #ef4444; color: #fff; border-color: #ef4444; }
+
+    /* Item card */
+    .item-card { transition: box-shadow .15s; }
+    .item-card:hover { box-shadow: 0 4px 18px rgba(233,30,140,.12); }
+
+    /* Pattern examples inline */
+    .ex-item { background:#fff8fc; border-left:3px solid #e91e8c; border-radius:0 7px 7px 0; padding:6px 10px; margin-bottom:6px; font-size:.8rem; line-height:1.6; }
+    .ex-item:last-child { margin-bottom:0; }
+    .ex-scene-tag { display:inline-block; background:#fce7f3; color:#be185d; font-size:.68rem; font-weight:700; padding:1px 7px; border-radius:9999px; margin-bottom:3px; }
+    .gen-btn { cursor:pointer; font-size:.72rem; font-weight:700; color:#9333ea; border:1.5px dashed #c084fc; background:#faf5ff; border-radius:8px; padding:5px 10px; width:100%; text-align:center; transition:all .15s; }
+    .gen-btn:hover { background:#f3e8ff; border-color:#9333ea; }
+    .gen-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* Review overlay */
+    #review-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.55); z-index: 2000;
+      align-items: center; justify-content: center;
+    }
+    #review-overlay.open { display: flex; }
+
+    /* Review card flip */
+    .flip-container { perspective: 1000px; }
+    .flip-card {
+      position: relative; transition: transform .5s;
+      transform-style: preserve-3d;
+    }
+    .flip-card.flipped { transform: rotateY(180deg); }
+    .flip-front, .flip-back {
+      position: absolute; inset: 0; backface-visibility: hidden;
+      border-radius: 20px; padding: 28px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .flip-back { transform: rotateY(180deg); overflow-y: auto; align-items: flex-start; justify-content: flex-start; }
+
+    /* Progress bar */
+    #review-progress-bar { transition: width .3s; }
+
+    /* Tips loading */
+    .tip-item { background: #fff8fc; border-left: 3px solid #e91e8c; border-radius: 0 8px 8px 0; padding: 8px 12px; margin-bottom: 8px; font-size: .88rem; line-height: 1.65; }
+
+    /* Skeleton */
+    .skeleton { background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 6px; height: 20px; margin-bottom: 8px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* Mastery dot */
+    .dot-familiar   { background: #22c55e; }
+    .dot-normal     { background: #f59e0b; }
+    .dot-unfamiliar { background: #ef4444; }
+    .dot-unknown    { background: #d1d5db; }
+  </style>
+</head>
+<body class="bg-pink-50 min-h-screen">
+
+<!-- HEADER -->
+<header class="bg-white shadow-sm sticky top-0 z-50">
+  <div class="max-w-5xl mx-auto px-5 py-4 flex items-center gap-4">
+    <a href="/" class="w-11 h-11 bg-pink-100 rounded-xl flex items-center justify-center text-2xl hover:bg-pink-200 transition">🐷</a>
+    <div class="flex-1">
+      <h1 class="text-xl font-black text-pink-600">单词 &amp; 句型库</h1>
+      <p class="text-xs text-gray-400">全52集 · 标记熟悉度 · 一键复习</p>
+    </div>
+    <!-- Stats pills -->
+    <div class="hidden sm:flex gap-2 text-xs font-semibold">
+      <span class="bg-green-50 text-green-700 border border-green-200 px-3 py-1 rounded-full">
+        熟悉 <span id="stat-familiar">—</span>
+      </span>
+      <span class="bg-yellow-50 text-yellow-700 border border-yellow-200 px-3 py-1 rounded-full">
+        一般 <span id="stat-normal">—</span>
+      </span>
+      <span class="bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full">
+        不熟悉 <span id="stat-unfamiliar">—</span>
+      </span>
+    </div>
+    <!-- Review button -->
+    <button onclick="startReview()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-4 py-2 rounded-xl text-sm shadow transition flex items-center gap-1.5">
+      <span>🎯</span> 一键复习
+    </button>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-5 py-6">
+
+  <!-- Tabs -->
+  <div class="flex gap-2 mb-5">
+    <button id="tab-vocab" class="tab-btn active px-5 py-2 rounded-full font-bold text-sm border border-pink-200 text-pink-600"
+            onclick="switchTab('vocab')">📖 单词库</button>
+    <button id="tab-pattern" class="tab-btn px-5 py-2 rounded-full font-bold text-sm border border-pink-200 text-pink-600"
+            onclick="switchTab('pattern')">💬 句型库</button>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="bg-white rounded-2xl shadow-sm border border-pink-100 px-4 py-3 mb-5 flex flex-wrap gap-3 items-center">
+    <div class="flex gap-1.5 flex-wrap">
+      <button class="filter-mastery-btn m-btn m-btn-all active-filter px-4 py-1.5 rounded-full text-xs font-bold border border-pink-200 text-pink-600 bg-pink-50"
+              onclick="setMasteryFilter('all', this)">全部</button>
+      <button class="filter-mastery-btn m-btn px-4 py-1.5 rounded-full text-xs font-bold border border-gray-200 text-gray-500 bg-gray-50"
+              onclick="setMasteryFilter('unknown', this)">⬜ 未标记</button>
+      <button class="filter-mastery-btn m-btn px-4 py-1.5 rounded-full text-xs font-bold border border-red-200 text-red-600 bg-red-50"
+              onclick="setMasteryFilter('unfamiliar', this)">🔴 不熟悉</button>
+      <button class="filter-mastery-btn m-btn px-4 py-1.5 rounded-full text-xs font-bold border border-yellow-200 text-yellow-700 bg-yellow-50"
+              onclick="setMasteryFilter('normal', this)">🟡 一般</button>
+      <button class="filter-mastery-btn m-btn px-4 py-1.5 rounded-full text-xs font-bold border border-green-200 text-green-700 bg-green-50"
+              onclick="setMasteryFilter('familiar', this)">🟢 熟悉</button>
+    </div>
+    <div class="ml-auto">
+      <select id="ep-filter" onchange="setEpFilter(this.value)"
+              class="text-xs border border-pink-200 rounded-lg px-3 py-1.5 text-gray-600 bg-white focus:outline-none focus:border-pink-400">
+        <option value="all">全部集数</option>
+        {% for ep in ep_list %}
+        <option value="{{ ep.num }}">EP{{ ep.num }} · {{ ep.title_zh }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <!-- Count / loading hint -->
+  <div class="flex items-center justify-between mb-3">
+    <p class="text-sm text-gray-500">共 <span id="item-count" class="font-bold text-pink-600">—</span> 个</p>
+    <p id="loading-hint" class="text-xs text-gray-400 hidden">加载中…</p>
+  </div>
+
+  <!-- Item grid -->
+  <div id="item-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+  <div id="empty-hint" class="hidden text-center py-16 text-gray-400">
+    <div class="text-4xl mb-3">🐷</div>
+    <p class="font-semibold">这里暂时没有内容</p>
+    <p class="text-sm mt-1">换个筛选条件试试</p>
+  </div>
+
+</main>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     REVIEW OVERLAY
+════════════════════════════════════════════════════════════════ -->
+<div id="review-overlay">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden" style="max-height:92vh; display:flex; flex-direction:column;">
+
+    <!-- Top bar -->
+    <div class="px-6 pt-5 pb-3 border-b border-pink-100 flex items-center gap-3">
+      <div class="flex-1">
+        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div id="review-progress-bar" class="h-2 bg-pink-400 rounded-full" style="width:0%"></div>
+        </div>
+        <p class="text-xs text-gray-400 mt-1">
+          <span id="review-cur">1</span> / <span id="review-total">0</span>
+          <span class="ml-2 text-pink-500 font-semibold" id="review-type-label"></span>
+        </p>
+      </div>
+      <button onclick="closeReview()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+    </div>
+
+    <!-- Card area -->
+    <div class="flex-1 overflow-hidden px-5 py-5" style="min-height:340px;">
+      <div class="flip-container w-full" style="height:100%; min-height:320px;">
+        <div id="review-flip-card" class="flip-card w-full" style="height:100%; min-height:320px;">
+
+          <!-- FRONT -->
+          <div class="flip-front bg-gradient-to-br from-pink-50 to-white border border-pink-100">
+            <div class="text-center w-full">
+              <span id="rv-ep-badge" class="inline-block mb-3 text-xs font-bold px-3 py-1 rounded-full bg-pink-100 text-pink-600"></span>
+              <div id="rv-main" class="text-4xl font-black text-pink-700 mb-2 leading-tight break-words px-2"></div>
+              <div id="rv-sub" class="text-sm text-gray-400 font-medium mb-6"></div>
+              <button onclick="flipCard()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm shadow-md transition">
+                查看复习内容 →
+              </button>
+            </div>
+          </div>
+
+          <!-- BACK -->
+          <div class="flip-back bg-white border border-pink-100" style="padding:20px 22px;">
+            <div class="w-full">
+              <!-- Translation -->
+              <div class="bg-pink-50 rounded-xl px-4 py-3 mb-3 text-center">
+                <p class="text-xs text-pink-400 font-semibold mb-0.5">中文释义</p>
+                <p id="rv-zh" class="text-lg font-bold text-pink-700"></p>
+              </div>
+
+              <!-- Pattern template (sentences only) -->
+              <div id="rv-template-block" class="mb-3 hidden">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">📐 句型模板</p>
+                <div id="rv-template" class="bg-purple-50 border-l-4 border-purple-400 rounded-r-xl px-4 py-2.5 text-base font-black text-purple-700 tracking-wide"></div>
+              </div>
+
+              <!-- Peppa scene -->
+              <div class="mb-3">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">🎬 佩奇剧中台词</p>
+                <div id="rv-scene" class="bg-yellow-50 border-l-4 border-yellow-400 rounded-r-xl px-4 py-2.5 text-sm text-gray-700 leading-relaxed italic"></div>
+              </div>
+
+              <!-- Life tips -->
+              <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">💡 生活场景示例 × 3（家长照着说）</p>
+                <div id="rv-tips">
+                  <div class="skeleton w-full"></div>
+                  <div class="skeleton w-4/5"></div>
+                  <div class="skeleton w-5/6"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- flip-card -->
+      </div><!-- flip-container -->
+    </div>
+
+    <!-- Bottom mastery buttons -->
+    <div class="px-5 pb-5 pt-2 border-t border-pink-50">
+      <p class="text-xs text-center text-gray-400 mb-3">标记后自动跳下一张</p>
+      <div class="flex gap-2 justify-center">
+        <button onclick="markAndNext('unfamiliar')"
+                class="flex-1 py-2.5 rounded-xl text-sm font-bold border-2 border-red-300 text-red-600 bg-red-50 hover:bg-red-500 hover:text-white hover:border-red-500 transition">
+          🔴 不熟悉
+        </button>
+        <button onclick="markAndNext('normal')"
+                class="flex-1 py-2.5 rounded-xl text-sm font-bold border-2 border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-amber-400 hover:text-white hover:border-amber-400 transition">
+          🟡 一般
+        </button>
+        <button onclick="markAndNext('familiar')"
+                class="flex-1 py-2.5 rounded-xl text-sm font-bold border-2 border-green-300 text-green-700 bg-green-50 hover:bg-green-500 hover:text-white hover:border-green-500 transition">
+          🟢 熟悉
+        </button>
+      </div>
+      <button onclick="skipNext()"
+              class="mt-2 w-full py-2 rounded-xl text-xs text-gray-400 hover:text-gray-600 transition">
+        跳过 →
+      </button>
+    </div>
+
+  </div>
+</div><!-- review-overlay -->
+
+<!-- Done overlay -->
+<div id="done-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2100; align-items:center; justify-content:center;">
+  <div class="bg-white rounded-3xl shadow-2xl p-10 mx-4 text-center max-w-sm w-full">
+    <div class="text-5xl mb-4">🎉</div>
+    <h2 class="text-2xl font-black text-pink-600 mb-2">复习完成！</h2>
+    <p class="text-gray-500 text-sm mb-6">本轮 <span id="done-count" class="font-bold text-pink-600"></span> 个都复习过了</p>
+    <div class="flex gap-3">
+      <button onclick="closeDone()" class="flex-1 py-2.5 rounded-xl border-2 border-pink-200 text-pink-600 font-bold text-sm hover:bg-pink-50 transition">返回</button>
+      <button onclick="startReview()" class="flex-1 py-2.5 rounded-xl bg-pink-500 text-white font-bold text-sm hover:bg-pink-600 transition">再来一轮</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentTab = 'vocab';
+let masteryFilter = 'all';
+let epFilter = 'all';
+let allItems = [];       // full list for current tab
+let displayItems = [];   // after filters
+
+let reviewQueue = [];
+let reviewIdx = 0;
+let reviewTipsCache = {};   // key -> {tip1,tip2,tip3}
+
+const MASTERY_LABELS = {
+  familiar: { text: '🟢 熟悉',   cls: 'dot-familiar' },
+  normal:   { text: '🟡 一般',   cls: 'dot-normal'   },
+  unfamiliar: { text: '🔴 不熟悉', cls: 'dot-unfamiliar' },
+  unknown:  { text: '⬜ 未标记', cls: 'dot-unknown'  },
+};
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-vocab').classList.toggle('active', tab === 'vocab');
+  document.getElementById('tab-pattern').classList.toggle('active', tab === 'pattern');
+  epFilter = 'all';
+  document.getElementById('ep-filter').value = 'all';
+  loadItems();
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function setMasteryFilter(val, btn) {
+  masteryFilter = val;
+  document.querySelectorAll('.filter-mastery-btn').forEach(b => {
+    b.classList.remove('active-filter', 'ring-2', 'ring-pink-300');
+  });
+  btn.classList.add('active-filter', 'ring-2', 'ring-pink-300');
+  applyFilters();
+}
+
+function setEpFilter(val) {
+  epFilter = val;
+  applyFilters();
+}
+
+function applyFilters() {
+  displayItems = allItems.filter(item => {
+    const okMastery = masteryFilter === 'all' || item.mastery === masteryFilter;
+    const okEp = epFilter === 'all' || String(item.ep_num) === String(epFilter);
+    return okMastery && okEp;
+  });
+  renderGrid();
+}
+
+// ── Load items ────────────────────────────────────────────────────────────────
+async function loadItems() {
+  document.getElementById('loading-hint').classList.remove('hidden');
+  document.getElementById('item-grid').innerHTML = '';
+  document.getElementById('empty-hint').classList.add('hidden');
+
+  try {
+    const [itemsRes, tipsRes] = await Promise.all([
+      fetch(`/api/library/items?type=${currentTab}`),
+      currentTab === 'pattern' ? fetch('/api/library/tips-bulk?type=pattern') : Promise.resolve(null),
+    ]);
+    allItems = await itemsRes.json();
+
+    // 把已缓存的 tips 合并进 items
+    if (tipsRes) {
+      const bulkTips = await tipsRes.json();
+      allItems.forEach(item => {
+        const key = `${item.ep_num}:${item.item_key}`;
+        const t = bulkTips[key];
+        if (t) {
+          item._tips = t;
+          item._template = t.template || '';
+        }
+      });
+    }
+
+    applyFilters();
+    loadStats();
+  } catch(e) {
+    console.error(e);
+  } finally {
+    document.getElementById('loading-hint').classList.add('hidden');
+  }
+}
+
+// ── Generate tips inline ──────────────────────────────────────────────────────
+async function generateTips(idx, btn) {
+  const item = displayItems[idx];
+  if (!item) return;
+
+  btn.disabled = true;
+  btn.textContent = '⏳ AI 生成中…';
+
+  try {
+    const params = new URLSearchParams({ type: item.type, ep_num: item.ep_num, item_key: item.item_key });
+    const res = await fetch(`/api/library/tips?${params}`);
+    const tips = await res.json();
+
+    // 缓存回 item
+    item._tips = tips;
+    item._template = tips.template || item._template || '';
+    const ai = allItems.find(a => a.ep_num === item.ep_num && a.item_key === item.item_key);
+    if (ai) { ai._tips = tips; ai._template = item._template; }
+
+    // 重新渲染该卡片
+    const card = btn.closest('.item-card');
+    card.outerHTML = renderCard(item, idx);
+    // outerHTML 替换后需重新绑定（通过 renderGrid 重渲染整张卡更稳）
+    renderGrid();
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '❌ 生成失败，点击重试';
+  }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const res = await fetch('/api/library/stats');
+    const data = await res.json();
+    const d = data[currentTab] || {};
+    document.getElementById('stat-familiar').textContent = d.familiar || 0;
+    document.getElementById('stat-normal').textContent = d.normal || 0;
+    document.getElementById('stat-unfamiliar').textContent = d.unfamiliar || 0;
+  } catch(e) {}
+}
+
+// ── Render grid ───────────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('item-grid');
+  const count = displayItems.length;
+  document.getElementById('item-count').textContent = count;
+
+  if (count === 0) {
+    grid.innerHTML = '';
+    document.getElementById('empty-hint').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('empty-hint').classList.add('hidden');
+
+  // 句型卡片用2列，单词用3列
+  if (currentTab === 'pattern') {
+    grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+  } else {
+    grid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3';
+  }
+  grid.innerHTML = displayItems.map((item, idx) => renderCard(item, idx)).join('');
+}
+
+function renderCard(item, idx) {
+  const m = item.mastery || 'unknown';
+  const mLabel = MASTERY_LABELS[m] || MASTERY_LABELS.unknown;
+  const color = item.ep_color || 'pink';
+
+  let mainContent = '';
+  let subContent = '';
+  let extraContent = '';
+
+  if (item.type === 'vocab') {
+    mainContent = `<span class="text-xl font-black text-gray-800">${esc(item.word)}</span>
+      <span class="text-xs text-gray-400 ml-1.5">${esc(item.phonetic)}</span>
+      <span class="text-xs text-gray-400 ml-1">${esc(item.pos)}</span>`;
+    subContent = `<span class="text-sm text-gray-500">${esc(item.zh)}</span>`;
+    extraContent = item.action ? `<p class="text-xs text-gray-400 mt-1.5 line-clamp-2">🤸 ${esc(item.action)}</p>` : '';
+  } else {
+    // 句型卡片 - 展示模板 + 3个生活示例
+    const tpl = item._template || '';
+    const tips = item._tips;  // {tip1,tip2,tip3} or null
+
+    // 顶部：模板（大字） + 原句（小字）
+    mainContent = tpl
+      ? `<span class="text-base font-black text-purple-700">📐 ${esc(tpl)}</span>`
+      : `<span class="text-sm font-bold text-gray-700 italic">"${esc(item.pattern)}"</span>`;
+    subContent = tpl
+      ? `<span class="text-xs text-gray-400 italic">"${esc(item.pattern)}" · ${esc(item.zh)}</span>`
+      : `<span class="text-sm text-gray-500">${esc(item.zh)}</span>`;
+
+    // 3个示例区域
+    if (tips && (tips.tip1 || tips.tip2 || tips.tip3)) {
+      const tipList = [tips.tip1, tips.tip2, tips.tip3].filter(Boolean);
+      extraContent = `
+        <div class="mt-2.5">
+          <p class="text-xs font-bold text-gray-400 mb-1.5">💡 生活示例（家长照着说）</p>
+          ${tipList.map((t, i) => {
+            const match = t.match(/^【(.+?)】(.+)$/);
+            if (match) {
+              return `<div class="ex-item">
+                <span class="ex-scene-tag">场景${i+1}：${esc(match[1])}</span>
+                <div>${esc(match[2])}</div>
+              </div>`;
+            }
+            return `<div class="ex-item"><span class="font-bold text-pink-500 mr-1">${i+1}.</span>${esc(t)}</div>`;
+          }).join('')}
+        </div>`;
+    } else {
+      // 显示剧中原始 example + 生成按钮
+      const ep_ex = item.example || '';
+      extraContent = `
+        <div class="mt-2.5">
+          ${ep_ex ? `<p class="text-xs text-gray-400 italic mb-2">🎬 "${esc(ep_ex)}"</p>` : ''}
+          <button class="gen-btn" id="gen-btn-${idx}" onclick="generateTips(${idx}, this)">
+            ✨ 生成3个生活示例
+          </button>
+        </div>`;
+    }
+    return `
+  <div class="item-card bg-white rounded-2xl border border-pink-100 shadow-sm p-4" data-idx="${idx}">
+    <div class="flex items-center justify-between mb-2">
+      <a href="/ep/${item.ep_num}" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-${color}-50 text-${color}-600 border border-${color}-200 hover:bg-${color}-100 transition">
+        EP${item.ep_num} ${esc(item.ep_title_zh)}
+      </a>
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full inline-block ${mLabel.cls}"></span>
+        <span class="text-xs text-gray-400">${mLabel.text}</span>
+      </div>
+    </div>
+    <div class="mb-0.5">${mainContent}</div>
+    <div class="mb-1">${subContent}</div>
+    ${extraContent}
+    <div class="flex gap-1.5 mt-3 pt-3 border-t border-gray-50">
+      <button class="m-btn m-btn-unfamiliar flex-1 text-center py-1 ${m==='unfamiliar'?'active':''}"
+              onclick="setMastery(${idx}, 'unfamiliar', this)">不熟悉</button>
+      <button class="m-btn m-btn-normal flex-1 text-center py-1 ${m==='normal'?'active':''}"
+              onclick="setMastery(${idx}, 'normal', this)">一般</button>
+      <button class="m-btn m-btn-familiar flex-1 text-center py-1 ${m==='familiar'?'active':''}"
+              onclick="setMastery(${idx}, 'familiar', this)">熟悉</button>
+    </div>
+  </div>`;
+  }
+
+  return `
+  <div class="item-card bg-white rounded-2xl border border-pink-100 shadow-sm p-4" data-idx="${idx}">
+    <!-- EP badge + mastery dot -->
+    <div class="flex items-center justify-between mb-2">
+      <a href="/ep/${item.ep_num}" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-${color}-50 text-${color}-600 border border-${color}-200 hover:bg-${color}-100 transition">
+        EP${item.ep_num} ${esc(item.ep_title_zh)}
+      </a>
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full inline-block ${mLabel.cls}"></span>
+        <span class="text-xs text-gray-400">${mLabel.text}</span>
+      </div>
+    </div>
+    <!-- Main content -->
+    <div class="mb-1">${mainContent}</div>
+    <div class="mb-1">${subContent}</div>
+    ${extraContent}
+    <!-- Mastery buttons -->
+    <div class="flex gap-1.5 mt-3 pt-3 border-t border-gray-50">
+      <button class="m-btn m-btn-unfamiliar flex-1 text-center py-1 ${m==='unfamiliar'?'active':''}"
+              onclick="setMastery(${idx}, 'unfamiliar', this)">不熟悉</button>
+      <button class="m-btn m-btn-normal flex-1 text-center py-1 ${m==='normal'?'active':''}"
+              onclick="setMastery(${idx}, 'normal', this)">一般</button>
+      <button class="m-btn m-btn-familiar flex-1 text-center py-1 ${m==='familiar'?'active':''}"
+              onclick="setMastery(${idx}, 'familiar', this)">熟悉</button>
+    </div>
+  </div>`;
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Set mastery ───────────────────────────────────────────────────────────────
+async function setMastery(idx, mastery, clickedBtn) {
+  const item = displayItems[idx];
+  if (!item) return;
+
+  // optimistic UI
+  item.mastery = mastery;
+  // also update in allItems
+  const ai = allItems.find(a => a.ep_num === item.ep_num && a.item_key === item.item_key && a.type === item.type);
+  if (ai) ai.mastery = mastery;
+
+  // update button states in this card
+  const card = clickedBtn.closest('.item-card');
+  card.querySelectorAll('.m-btn').forEach(b => b.classList.remove('active'));
+  clickedBtn.classList.add('active');
+
+  // update dot
+  const ml = MASTERY_LABELS[mastery];
+  const dot = card.querySelector('.w-2.h-2');
+  const dotLabel = card.querySelector('.text-xs.text-gray-400:last-child');
+  if (dot) { dot.className = `w-2 h-2 rounded-full inline-block ${ml.cls}`; }
+  if (dotLabel) dotLabel.textContent = ml.text;
+
+  await fetch('/api/library/mastery', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ type: item.type, ep_num: item.ep_num, item_key: item.item_key, mastery }),
+  });
+
+  loadStats();
+}
+
+// ── Review ────────────────────────────────────────────────────────────────────
+async function startReview() {
+  try {
+    const typeParam = document.getElementById('tab-vocab').classList.contains('active') ? 'vocab' : 'pattern';
+    const res = await fetch(`/api/library/review-queue?type=${typeParam}`);
+    reviewQueue = await res.json();
+  } catch(e) {
+    console.error(e);
+    return;
+  }
+
+  if (reviewQueue.length === 0) {
+    alert('暂无待复习内容，先去标记一下熟悉度吧！');
+    return;
+  }
+
+  reviewIdx = 0;
+  reviewTipsCache = {};
+  document.getElementById('review-total').textContent = reviewQueue.length;
+  document.getElementById('done-count').textContent = reviewQueue.length;
+  document.getElementById('review-overlay').classList.add('open');
+  showReviewCard();
+}
+
+function showReviewCard() {
+  if (reviewIdx >= reviewQueue.length) {
+    closeReview();
+    showDone();
+    return;
+  }
+
+  const item = reviewQueue[reviewIdx];
+  const cur = reviewIdx + 1;
+  const total = reviewQueue.length;
+
+  document.getElementById('review-cur').textContent = cur;
+  document.getElementById('review-progress-bar').style.width = `${(cur / total) * 100}%`;
+  document.getElementById('review-type-label').textContent = item.type === 'vocab' ? '单词' : '句型';
+
+  // Reset flip
+  document.getElementById('review-flip-card').classList.remove('flipped');
+
+  // Populate front
+  document.getElementById('rv-ep-badge').textContent = `EP${item.ep_num} · ${item.ep_title_zh || ''} · ${item.ep_title_en || ''}`;
+  if (item.type === 'vocab') {
+    document.getElementById('rv-main').textContent = item.word;
+    document.getElementById('rv-sub').textContent = `${item.phonetic || ''} ${item.pos || ''}`;
+  } else {
+    document.getElementById('rv-main').textContent = item.pattern;
+    document.getElementById('rv-sub').textContent = '';
+  }
+
+  // Populate back static content
+  document.getElementById('rv-zh').textContent = item.zh || '';
+  const scene = item.type === 'vocab'
+    ? (item.action || '（暂无场景说明）')
+    : (item.example || '（暂无台词示例）');
+  document.getElementById('rv-scene').textContent = scene;
+
+  // Reset tips to skeleton
+  document.getElementById('rv-tips').innerHTML = `
+    <div class="skeleton w-full"></div>
+    <div class="skeleton w-4/5"></div>
+    <div class="skeleton w-5/6"></div>`;
+
+  // Prefetch tips in background
+  prefetchTips(item);
+}
+
+async function prefetchTips(item) {
+  const key = `${item.type}:${item.ep_num}:${item.item_key}`;
+  if (reviewTipsCache[key]) return;
+  try {
+    const params = new URLSearchParams({ type: item.type, ep_num: item.ep_num, item_key: item.item_key });
+    const res = await fetch(`/api/library/tips?${params}`);
+    const data = await res.json();
+    reviewTipsCache[key] = data;
+  } catch(e) {
+    reviewTipsCache[key] = { tip1: '', tip2: '', tip3: '' };
+  }
+}
+
+async function flipCard() {
+  document.getElementById('review-flip-card').classList.add('flipped');
+
+  const item = reviewQueue[reviewIdx];
+  const key = `${item.type}:${item.ep_num}:${item.item_key}`;
+
+  // Show skeleton while loading
+  document.getElementById('rv-tips').innerHTML = `
+    <div class="skeleton w-full"></div>
+    <div class="skeleton w-4/5"></div>
+    <div class="skeleton w-5/6"></div>`;
+
+  // If not cached yet, fetch now (show loading state)
+  if (!reviewTipsCache[key]) {
+    await prefetchTips(item);
+  }
+
+  const tips = reviewTipsCache[key] || {};
+  renderTips(item, tips);
+}
+
+function renderTips(item, tips) {
+  // Template block (sentences only)
+  const tplBlock = document.getElementById('rv-template-block');
+  const tplEl = document.getElementById('rv-template');
+  if (item.type === 'pattern' && tips.template) {
+    tplBlock.classList.remove('hidden');
+    tplEl.textContent = tips.template;
+    // Also cache template back into the allItems / displayItems for card display
+    const ai = allItems.find(a => a.ep_num === item.ep_num && a.item_key === item.item_key && a.type === item.type);
+    if (ai) ai._template = tips.template;
+  } else {
+    tplBlock.classList.add('hidden');
+  }
+
+  // Tips
+  const container = document.getElementById('rv-tips');
+  const list = [tips.tip1, tips.tip2, tips.tip3].filter(Boolean);
+  if (list.length === 0) {
+    container.innerHTML = '<p class="text-xs text-gray-400 italic">暂无示例（请在 .env 中配置 OPENAI_API_KEY）</p>';
+    return;
+  }
+  container.innerHTML = list.map((t, i) => {
+    // Try to split "【场景名】家长说：'xxx'" for prettier rendering
+    const match = t.match(/^【(.+?)】(.+)$/);
+    if (match) {
+      return `<div class="tip-item">
+        <span class="inline-block bg-pink-100 text-pink-600 text-xs font-bold px-2 py-0.5 rounded-full mb-1">场景${i+1}：${esc(match[1])}</span>
+        <p class="text-sm text-gray-700 leading-relaxed">${esc(match[2])}</p>
+      </div>`;
+    }
+    return `<div class="tip-item"><span class="font-bold text-pink-500 mr-1">${i+1}.</span>${esc(t)}</div>`;
+  }).join('');
+}
+
+async function markAndNext(mastery) {
+  const item = reviewQueue[reviewIdx];
+  if (item) {
+    // Update in allItems/displayItems
+    const ai = allItems.find(a => a.ep_num === item.ep_num && a.item_key === item.item_key && a.type === item.type);
+    if (ai) ai.mastery = mastery;
+    const di = displayItems.find(a => a.ep_num === item.ep_num && a.item_key === item.item_key && a.type === item.type);
+    if (di) di.mastery = mastery;
+
+    // Refresh that card in grid if visible
+    const cards = document.querySelectorAll('[data-idx]');
+    cards.forEach(card => {
+      const cardItem = displayItems[parseInt(card.dataset.idx)];
+      if (cardItem && cardItem.ep_num === item.ep_num && cardItem.item_key === item.item_key) {
+        const ml = MASTERY_LABELS[mastery];
+        const dot = card.querySelector('.w-2.h-2');
+        if (dot) dot.className = `w-2 h-2 rounded-full inline-block ${ml.cls}`;
+        card.querySelectorAll('.m-btn').forEach(b => b.classList.remove('active'));
+        const btnMap = { unfamiliar: 0, normal: 1, familiar: 2 };
+        const btns = card.querySelectorAll('.m-btn');
+        if (btns[btnMap[mastery]]) btns[btnMap[mastery]].classList.add('active');
+      }
+    });
+
+    await fetch('/api/library/mastery', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ type: item.type, ep_num: item.ep_num, item_key: item.item_key, mastery }),
+    });
+  }
+  reviewIdx++;
+  // Prefetch next
+  if (reviewIdx < reviewQueue.length) {
+    prefetchTips(reviewQueue[reviewIdx]);
+  }
+  showReviewCard();
+  loadStats();
+}
+
+function skipNext() {
+  reviewIdx++;
+  if (reviewIdx < reviewQueue.length) {
+    prefetchTips(reviewQueue[reviewIdx]);
+  }
+  showReviewCard();
+}
+
+function closeReview() {
+  document.getElementById('review-overlay').classList.remove('open');
+}
+
+function showDone() {
+  document.getElementById('done-overlay').style.display = 'flex';
+}
+
+function closeDone() {
+  document.getElementById('done-overlay').style.display = 'none';
+  renderGrid();
+  loadStats();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadItems();
+</script>
+
+<footer class="max-w-5xl mx-auto px-5 py-6 text-center">
+  <p class="text-xs text-gray-400">小猪佩奇第1季 · 家长外挂攻略 · 让每一集都成为真实的语言习得 🐷</p>
+</footer>
+</body>
+</html>

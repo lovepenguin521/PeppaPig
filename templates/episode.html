@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EP{{ ep.num }} · {{ ep.title_en }} {{ ep.title_zh }} · 家长外挂攻略</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --pink: #e91e8c; }
+    body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    .tab-btn { transition: all .2s; }
+    .tab-btn.active { background: var(--pink); color: #fff; box-shadow: 0 2px 8px rgba(233,30,140,.35); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .phase-badge { display:inline-block; padding:2px 10px; border-radius:9999px; font-size:.75rem; font-weight:700; }
+    .script-box { background:#fff8fc; border-left:4px solid var(--pink); padding:10px 14px; border-radius:0 8px 8px 0; margin:8px 0; font-size:.95rem; line-height:1.75; }
+    .detail-btn { cursor:pointer; background:#fdf2f8; border:1.5px solid #f9a8d4; color:#be185d; padding:4px 14px; border-radius:20px; font-size:.83rem; font-weight:600; transition:all .15s; display:inline-flex; align-items:center; gap:4px; }
+    .detail-btn:hover { background:#fce7f3; }
+    .score-input { width:80px; border:1.5px solid #f9a8d4; border-radius:8px; padding:4px 8px; font-size:.9rem; text-align:center; outline:none; }
+    .score-input:focus { border-color:#ec4899; box-shadow:0 0 0 2px rgba(236,72,153,.15); }
+    .record-card { background:#fff; border:1px solid #fce7f3; border-radius:10px; padding:12px 16px; margin-bottom:10px; }
+    .record-card .score-tag { display:inline-block; background:#fef3c7; color:#92400e; border-radius:6px; padding:1px 8px; font-size:.8rem; font-weight:700; }
+    #modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; }
+    #modal-overlay.open { display:flex; }
+    #modal-box { background:#fff; border-radius:16px; max-width:720px; width:92%; max-height:85vh; overflow-y:auto; padding:28px 28px 24px; position:relative; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+    #modal-close { position:absolute; top:14px; right:18px; font-size:1.5rem; cursor:pointer; color:#9ca3af; background:none; border:none; }
+    .modal-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+    .modal-table th { background:#fdf2f8; color:#be185d; padding:7px 10px; border:1px solid #fce7f3; text-align:left; }
+    .modal-table td { padding:7px 10px; border:1px solid #f3f4f6; vertical-align:top; line-height:1.6; }
+    .level-1 { background:#fef3c7; border-left:4px solid #f59e0b; padding:9px 13px; border-radius:6px; margin-bottom:10px; }
+    .level-2 { background:#dbeafe; border-left:4px solid #3b82f6; padding:9px 13px; border-radius:6px; margin-bottom:10px; }
+    .level-3 { background:#dcfce7; border-left:4px solid #22c55e; padding:9px 13px; border-radius:6px; margin-bottom:10px; }
+    .content-table { width:100%; border-collapse:collapse; font-size:.88rem; margin:8px 0; }
+    .content-table th { background:#fdf2f8; color:#be185d; padding:6px 10px; border:1px solid #fce7f3; }
+    .content-table td { padding:6px 10px; border:1px solid #f3f4f6; line-height:1.6; vertical-align:top; }
+    .record-section { background:#fff; border:2px dashed #f9a8d4; border-radius:12px; padding:16px 18px; margin-top:24px; }
+    .record-section h3 { color:#be185d; font-size:1rem; font-weight:700; margin-bottom:10px; }
+    @media print {
+      @page { margin:1.2cm 1.4cm; size:A4; }
+      .no-print, nav, #modal-overlay, .detail-btn, .record-section, button { display:none !important; }
+      header { position:static !important; box-shadow:none !important; }
+      .tab-panel { display:block !important; }
+      body { background:#fff !important; font-size:8.5pt; line-height:1.3; }
+      main { padding:0 !important; max-width:100% !important; }
+      .bg-white.rounded-xl { box-shadow:none !important; border:1px solid #e5e7eb !important; border-radius:2px !important; page-break-inside:avoid; margin-bottom:4px !important; }
+      .p-5 { padding:4px 7px !important; }
+      .p-3 { padding:2px 5px !important; }
+      .mb-4 { margin-bottom:4px !important; }
+      .mb-3 { margin-bottom:3px !important; }
+      .mb-2 { margin-bottom:2px !important; }
+      .script-box { padding:2px 7px !important; margin:2px 0 !important; font-size:8pt !important; line-height:1.3 !important; }
+      .content-table th, .content-table td { padding:2px 4px !important; font-size:7.5pt !important; }
+      .phase-badge { font-size:7pt !important; padding:1px 6px !important; }
+      h2 { font-size:9pt !important; margin-bottom:2px !important; }
+      /* P1+P2 share a page; each other phase starts a new page */
+      #tab-knowledge { page-break-before:always; }
+      #tab-phase1 { page-break-before:always; }
+      #tab-phase2 { page-break-before:avoid; }
+      #tab-phase3 { page-break-before:always; }
+      #tab-phase4 { page-break-before:always; }
+      #tab-phase5 { page-break-before:always; }
+      #tab-phase6 { page-break-before:avoid; }
+      #tab-summary { page-break-before:always; }
+      /* Print-only reference blocks */
+      .print-ref { display:block !important; border-top:1px dashed #d1d5db; margin-top:4px; padding-top:3px; }
+      .print-ref-title { font-size:6.5pt !important; font-weight:700; color:#9ca3af; letter-spacing:.05em; text-transform:uppercase; margin-bottom:2px; }
+      .print-ref table { width:100%; border-collapse:collapse; font-size:7pt !important; }
+      .print-ref th { background:#f9fafb !important; color:#374151 !important; padding:1.5px 4px !important; border:1px solid #e5e7eb; font-size:7pt !important; font-weight:700; }
+      .print-ref td { padding:1.5px 4px !important; border:1px solid #f3f4f6; font-size:7pt !important; vertical-align:top; line-height:1.3; }
+      .print-ref .lvl { padding:2px 5px; border-radius:2px; margin-bottom:2px; font-size:7pt !important; }
+      .print-ref .lvl-label { font-weight:700; font-size:6.5pt !important; }
+    }
+    /* Screen: hide print-ref blocks */
+    .print-ref { display:none; }
+  </style>
+</head>
+<body class="bg-pink-50 min-h-screen">
+
+<!-- HEADER -->
+<header class="bg-white shadow-sm sticky top-0 z-50 no-print">
+  <div class="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a href="/" class="text-pink-400 hover:text-pink-600 text-sm font-medium flex items-center gap-1">← 目录</a>
+      <div class="w-px h-5 bg-gray-200"></div>
+      <div>
+        <h1 class="text-base font-black text-pink-600 leading-tight">EP{{ ep.num }} · {{ ep.title_en }} {{ ep.title_zh }}</h1>
+        <p class="text-xs text-gray-400">家长外挂攻略 · 约30分钟</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      {% if prev_ep %}
+      <a href="/ep/{{ prev_ep.num }}" class="no-print flex items-center gap-1 text-xs bg-pink-50 hover:bg-pink-100 text-pink-600 border border-pink-200 px-3 py-1.5 rounded-lg font-semibold transition-colors whitespace-nowrap">
+        ‹ EP{{ prev_ep.num }}
+      </a>
+      {% endif %}
+      {% if next_ep %}
+      <a href="/ep/{{ next_ep.num }}" class="no-print flex items-center gap-1 text-xs bg-pink-500 hover:bg-pink-600 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors whitespace-nowrap">
+        EP{{ next_ep.num }} ›
+      </a>
+      {% endif %}
+      <a href="/library" class="no-print text-xs bg-pink-500 hover:bg-pink-600 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors">📚 词库</a>
+      <button onclick="window.print()" class="no-print text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg font-medium">🖨️ 打印</button>
+    </div>
+  </div>
+  <div class="bg-pink-50 border-t border-pink-100 px-4 py-1 text-xs text-pink-500 font-mono overflow-x-auto whitespace-nowrap">
+    Phase1 IGNITE 3min · Phase2 WATCH 6min · Phase3 REACT 5min · Phase4 PLAY 12min · Phase5 OUTPUT 3min · Phase6 LOCK 1min · 合计30min
+  </div>
+</header>
+
+<!-- TAB NAV -->
+<nav class="bg-white border-b border-pink-100 sticky top-[68px] z-40 no-print overflow-x-auto">
+  <div class="max-w-5xl mx-auto px-2 flex gap-1 py-2">
+    <button class="tab-btn active px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('knowledge',this)">📚 知识速览</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase1',this)">🔥 P1 点火</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase2',this)">👀 P2 观看</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase3',this)">💬 P3 反应</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase4',this)">🎮 P4 玩</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase5',this)">🎤 P5 产出</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('phase6',this)">🔒 P6 锁定</button>
+    <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 whitespace-nowrap" onclick="showTab('summary',this)">🏆 通关</button>
+  </div>
+</nav>
+
+<main class="max-w-5xl mx-auto px-4 py-5">
+
+<!-- ══════════ 知识速览 ══════════ -->
+<div id="tab-knowledge" class="tab-panel active">
+  <div class="mb-3 p-3 bg-white rounded-xl shadow-sm text-sm text-gray-600 italic border-l-4 border-pink-300">
+    {{ ep.synopsis }}
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-pink-600 mb-3">核心词汇</h2>
+    <div class="overflow-x-auto">
+      <table class="content-table">
+        <thead><tr><th>单词</th><th>音标</th><th>词性</th><th>中文</th><th>记忆动作</th></tr></thead>
+        <tbody>
+          {% for v in ep.vocab %}
+          <tr><td><strong>{{ v.word }}</strong></td><td>{{ v.phonetic }}</td><td>{{ v.pos }}</td><td>{{ v.zh }}</td><td>{{ v.action }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-pink-600 mb-3">核心句型</h2>
+    <div class="overflow-x-auto">
+      <table class="content-table">
+        <thead><tr><th>句型</th><th>中文</th><th>剧中例句</th></tr></thead>
+        <tbody>
+          {% for p in ep.patterns %}
+          <tr><td><strong>{{ p.pattern }}</strong></td><td>{{ p.zh }}</td><td>{{ p.example }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <h2 class="text-base font-black text-pink-600 mb-3">教学目标</h2>
+    <div class="space-y-2">
+      <div class="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+        <span class="text-yellow-500 font-bold text-sm mt-0.5 whitespace-nowrap">最低</span>
+        <p class="text-sm">{{ ep.goals.min | safe }}</p>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <span class="text-blue-500 font-bold text-sm mt-0.5 whitespace-nowrap">中等</span>
+        <p class="text-sm">{{ ep.goals.mid | safe }}</p>
+      </div>
+      <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+        <span class="text-green-500 font-bold text-sm mt-0.5 whitespace-nowrap">理想</span>
+        <p class="text-sm">{{ ep.goals.ideal | safe }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PHASE 1 ══════════ -->
+<div id="tab-phase1" class="tab-panel">
+  <div class="mb-2"><span class="phase-badge bg-orange-100 text-orange-700">🔥 IGNITE 点火 · 3分钟</span></div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-orange-600 mb-1">上集复盘钩（1分钟）</h2>
+    <p class="text-xs text-gray-500 mb-3">{{ ep.phase1.review_intro | safe }}</p>
+    <div class="script-box">{{ ep.phase1.review_script | safe }}</div>
+    <div class="mt-3 p-3 bg-green-50 rounded-lg border border-green-200 text-sm">{{ ep.phase1.review_response | safe }}</div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-orange-600 mb-1">本集悬念预告（2分钟）</h2>
+    {% if ep.phase1.preview_intro %}
+    <p class="text-xs text-gray-500 mb-2">{{ ep.phase1.preview_intro | safe }}</p>
+    {% endif %}
+    <div class="script-box">{{ ep.phase1.preview_script | safe }}</div>
+    <div class="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200 text-sm font-medium text-orange-700">
+      🎯 任务：{{ ep.phase1.preview_mission | safe }}
+    </div>
+  </div>
+
+  <div id="record-phase1" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3"><label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase1" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="记录孩子今天的表现…"></textarea></div>
+    <div class="mb-3 flex items-center gap-3"><label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase1" class="score-input" placeholder="选填" min="0"></div>
+    <button onclick="saveRecord('phase1')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase1" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ══════════ PHASE 2 ══════════ -->
+<div id="tab-phase2" class="tab-panel">
+  <div class="mb-2"><span class="phase-badge bg-blue-100 text-blue-700">👀 WATCH 观看 · 6分钟</span></div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-blue-600 mb-3">播放设置</h2>
+    <div class="flex gap-3">
+      <div class="flex-1 p-3 bg-blue-50 rounded-lg text-center border border-blue-200"><div class="text-2xl">🔤</div><div class="text-sm font-bold text-blue-700 mt-1">英文音轨</div></div>
+      <div class="flex-1 p-3 bg-blue-50 rounded-lg text-center border border-blue-200"><div class="text-2xl">📝</div><div class="text-sm font-bold text-blue-700 mt-1">英文字幕</div></div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-blue-600 mb-2">家长片中任务</h2>
+    <p class="text-xs text-gray-500 mb-3">只用身体反应，不说话，让孩子自己感受语境</p>
+    <div class="space-y-2">
+      {% for a in ep.phase2.actions %}
+      <div class="flex items-start gap-3 p-3 bg-{{ a.bg }}-50 rounded-lg border border-{{ a.bg }}-100">
+        <span class="text-lg mt-0.5">{{ a.emoji }}</span>
+        <div class="text-sm">{{ a.trigger }} → <strong>{{ a.action }}</strong></div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="mt-3 p-3 bg-pink-50 rounded-lg border border-pink-200 text-sm text-pink-700 font-medium">
+      看完之后，<strong>不要问"你看懂了吗"</strong>。直接站起来，进 Phase 3。
+    </div>
+  </div>
+
+  <div id="record-phase2" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3"><label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase2" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="观看过程中孩子的表情、动作、自发笑声…"></textarea></div>
+    <div class="mb-3 flex items-center gap-3"><label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase2" class="score-input" placeholder="选填" min="0"></div>
+    <button onclick="saveRecord('phase2')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase2" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ══════════ PHASE 3 ══════════ -->
+<div id="tab-phase3" class="tab-panel">
+  <div class="mb-2"><span class="phase-badge bg-green-100 text-green-700">💬 REACT 反应 · 5分钟</span></div>
+  <div class="mb-3 p-3 bg-green-50 rounded-lg border border-green-200 text-sm text-green-800">{{ ep.phase3.intro | safe }}</div>
+
+  <!-- Q1 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-green-600">A. 理解确认（约2分钟）</h2>
+      <button class="detail-btn" onclick="openModal('q1')">📋 查看应答表</button>
+    </div>
+    <div class="space-y-3">
+      <div class="p-3 bg-gray-50 rounded-lg border">
+        <div class="text-xs font-bold text-gray-400 mb-1">问题 1 · {{ ep.phase3.q1.type_label }}</div>
+        <div class="script-box">
+          {% if ep.phase3.q1.note %}<p class="text-xs text-gray-500 mb-1">{{ ep.phase3.q1.note }}</p>{% endif %}
+          <p class="text-pink-700 font-semibold">{{ ep.phase3.q1.script | safe }}</p>
+        </div>
+      </div>
+      <div class="p-3 bg-gray-50 rounded-lg border">
+        <div class="text-xs font-bold text-gray-400 mb-1">问题 2 · {{ ep.phase3.q2.type_label }}</div>
+        <div class="script-box">
+          {% if ep.phase3.q2.note %}<p class="text-xs text-gray-500 mb-1">{{ ep.phase3.q2.note }}</p>{% endif %}
+          <p class="text-pink-700 font-semibold">{{ ep.phase3.q2.script | safe }}</p>
+        </div>
+      </div>
+      <div class="p-3 bg-gray-50 rounded-lg border">
+        <div class="text-xs font-bold text-gray-400 mb-1">问题 3 · {{ ep.phase3.q3.type_label }}</div>
+        <div class="script-box">
+          {% if ep.phase3.q3.note %}<p class="text-xs text-gray-500 mb-1">{{ ep.phase3.q3.note }}</p>{% endif %}
+          <p class="text-pink-700 font-semibold">{{ ep.phase3.q3.script | safe }}</p>
+        </div>
+      </div>
+    </div>
+    <!-- PRINT REF: Q1/Q2/Q3 应答表 -->
+    <div class="print-ref">
+      <div class="print-ref-title">📋 应答参考</div>
+      <table><thead><tr><th>孩子回答</th><th>Q1 家长接话</th></tr></thead><tbody>
+        {% for r in ep.phase3.q1.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+      </tbody></table>
+      <table style="margin-top:2px"><thead><tr><th>孩子回答</th><th>Q2 家长接话</th></tr></thead><tbody>
+        {% for r in ep.phase3.q2.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+      </tbody></table>
+      <table style="margin-top:2px"><thead><tr><th>孩子回答</th><th>Q3 家长接话</th></tr></thead><tbody>
+        {% for r in ep.phase3.q3.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- B personal -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-green-600">B. 情感连接（约1分钟）</h2>
+      <button class="detail-btn" onclick="openModal('personal')">📋 查看应答表</button>
+    </div>
+    <p class="text-xs text-gray-500 mb-2">{{ ep.phase3.personal.intro }}</p>
+    <div class="script-box">
+      {% for line in ep.phase3.personal.script_lines %}
+        {% if line.startswith('（') %}<p class="text-xs text-gray-500">{{ line }}</p>
+        {% else %}<p class="text-pink-700 font-semibold">{{ line | safe }}</p>{% endif %}
+      {% endfor %}
+    </div>
+    <!-- PRINT REF: 情感连接应答表 -->
+    <div class="print-ref">
+      <div class="print-ref-title">📋 情感连接应答参考</div>
+      <table><thead><tr><th>孩子反应</th><th>家长接话</th></tr></thead><tbody>
+        {% for r in ep.phase3.personal.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- C roleplay -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-green-600">C. 角色代入（约1分钟）</h2>
+      <button class="detail-btn" onclick="openModal('roleplay3')">📋 查看应答表</button>
+    </div>
+    <p class="text-xs text-gray-500 mb-2">{{ ep.phase3.role_play.intro }}</p>
+    <div class="script-box">
+      {% for line in ep.phase3.role_play.script_lines %}
+        {% if line.startswith('（') %}<p class="text-xs text-gray-500">{{ line }}</p>
+        {% else %}<p class="text-pink-700 font-semibold">{{ line | safe }}</p>{% endif %}
+      {% endfor %}
+    </div>
+    <!-- PRINT REF: 角色代入应答表 -->
+    <div class="print-ref">
+      <div class="print-ref-title">📋 角色代入应答参考</div>
+      <table><thead><tr><th>孩子反应</th><th>家长接话</th></tr></thead><tbody>
+        {% for r in ep.phase3.role_play.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <!-- D recast -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-green-600">D. Recast 参考表</h2>
+      <button class="detail-btn" onclick="openModal('recast')">📋 查看完整表格</button>
+    </div>
+    <div class="p-3 bg-green-50 rounded-lg border border-green-200 text-sm text-green-800">
+      <strong>原则</strong>：孩子说错时，家长不说"错了"，直接用正确形式接话，孩子自然就听到了正确版本。
+    </div>
+    <!-- PRINT REF: Recast 表格 -->
+    <div class="print-ref">
+      <div class="print-ref-title">✏️ Recast 速查</div>
+      <table><thead><tr><th>孩子说</th><th>家长 Recast</th><th>说明</th></tr></thead><tbody>
+        {% for r in ep.phase3.recast %}<tr><td>{{ r.child | safe }}</td><td>{{ r.correct | safe }}</td><td>{{ r.note }}</td></tr>{% endfor %}
+      </tbody></table>
+    </div>
+  </div>
+
+  <div id="record-phase3" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3"><label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase3" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="孩子回答了哪些问题？有没有主动说英文？"></textarea></div>
+    <div class="mb-3 flex items-center gap-3"><label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase3" class="score-input" placeholder="选填" min="0"></div>
+    <button onclick="saveRecord('phase3')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase3" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ══════════ PHASE 4 ══════════ -->
+<div id="tab-phase4" class="tab-panel">
+  <div class="mb-2"><span class="phase-badge bg-purple-100 text-purple-700">🎮 PLAY 玩起来 · 12分钟</span></div>
+
+  <!-- TPR -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-purple-600 mb-1">TPR 热身（4分钟）</h2>
+    <p class="text-xs text-gray-500 mb-3">第一轮家长考孩子，第二轮孩子当考官——家长做错孩子得1分，满3分孩子赢！</p>
+    <div class="space-y-2">
+      {% for t in ep.phase4.tpr %}
+      <div class="p-3 bg-purple-50 rounded-lg border border-purple-100">
+        <p class="font-bold text-purple-800 text-sm">{{ t.command | safe }}</p>
+        <p class="text-xs text-gray-600 mt-1">{{ t.action }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Dubbing -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-purple-600 mb-1">静音配音大乱斗（5分钟）</h2>
+    <p class="text-xs text-gray-500 mb-2">重新播放，在下面几个画面<strong>按暂停</strong>，孩子配音。情绪到位就算赢。</p>
+    <div class="flex gap-3 text-xs mb-3">
+      <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded font-bold">L1 情绪音</span>
+      <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded font-bold">L2 关键词</span>
+      <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded font-bold">L3 完整句</span>
+    </div>
+    <div class="space-y-3">
+      {% for d in ep.phase4.dubbing %}
+      <div class="p-3 border rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm font-bold text-gray-700">画面{{ d.num }} · {{ d.time }}</div>
+          <button class="detail-btn" onclick="openModal('dub{{ d.num }}')">🎬 查看脚手架</button>
+        </div>
+        <p class="text-xs text-gray-600">{{ d.scene }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    <!-- PRINT REF: 配音脚手架 -->
+    <div class="print-ref">
+      <div class="print-ref-title">🎬 配音脚手架（L1 情绪音 · L2 关键词 · L3 完整句）</div>
+      <table>
+        <thead><tr><th style="width:5%">画面</th><th style="width:15%">时间点</th><th style="width:13%">L1</th><th style="width:20%">L2</th><th>L3</th></tr></thead>
+        <tbody>
+          {% for d in ep.phase4.dubbing %}
+          <tr>
+            <td><strong>{{ d.num }}</strong></td>
+            <td>{{ d.time }}</td>
+            <td>{{ d.l1 }}</td>
+            <td>{{ d.l2 }}</td>
+            <td>{{ d.l3 | safe }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Find the Bugs -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-purple-600">Find the Bugs（3分钟）</h2>
+      <button class="detail-btn" onclick="openModal('bugs')">🐛 查看全部5句</button>
+    </div>
+    <div class="p-3 bg-purple-50 rounded-lg border border-purple-200 text-sm">
+      <p><strong>规则</strong>：家长朗读下面5句，有些含故意放入的Bug词。孩子听完整句再拍桌子喊出正确词。</p>
+      <p class="mt-1 text-red-600 font-medium">⚠️ 第3句是正确原句，孩子要喊 "No bugs! Correct!"，乱喊扣1分！</p>
+    </div>
+    <!-- PRINT REF: 全部5句 Bugs -->
+    <div class="print-ref">
+      <div class="print-ref-title">🐛 Find the Bugs · 全部5句（⚠️ 第3句无Bug，孩子喊错扣分！）</div>
+      <table>
+        <thead><tr><th style="width:4%">#</th><th style="width:48%">家长读（Bug版）</th><th style="width:15%">孩子喊</th><th>正确原句</th></tr></thead>
+        <tbody>
+          {% for b in ep.phase4.bugs %}
+          <tr style="background:{% if b.is_trap %}#f0fdf4{% else %}#fff{% endif %}">
+            <td><strong>{{ b.num }}</strong></td>
+            <td>{{ b.bug_line | safe }}</td>
+            <td>{% if b.is_trap %}<strong style="color:#16a34a">No bugs!</strong>{% else %}<strong>{{ b.answer }}</strong>{% endif %}</td>
+            <td>{% if b.is_trap %}<em style="color:#16a34a">原句正确</em>{% else %}{{ b.correct_line | safe }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="record-phase4" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3"><label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase4" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="TPR哪个动作最嗨？配音达到哪个Level？Bugs扣分了吗？"></textarea></div>
+    <div class="mb-3 flex items-center gap-3"><label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase4" class="score-input" placeholder="选填" min="0"></div>
+    <button onclick="saveRecord('phase4')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase4" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ══════════ PHASE 5 ══════════ -->
+<div id="tab-phase5" class="tab-panel">
+  <div class="mb-2"><span class="phase-badge bg-teal-100 text-teal-700">🎤 OUTPUT 自由产出 · 3分钟</span></div>
+  <div class="mb-3 p-3 bg-teal-50 rounded-lg border border-teal-200 text-sm text-teal-800">
+    孩子用自己的话输出故事。这是语言进入<strong>长期记忆</strong>的最后一步。
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-teal-600">A. 3句话讲故事</h2>
+      <button class="detail-btn" onclick="openModal('story')">📖 查看3级示例</button>
+    </div>
+    <div class="script-box">
+      <p>家长扮演"刚从火星回来的外星人"：</p>
+      <p class="text-pink-700 font-semibold mt-1">"I just landed from Mars. I have NO idea what happened here. Can you tell me the story？ Just 3 sentences. Go！"</p>
+    </div>
+    <div class="mt-2">
+      <button class="detail-btn" onclick="openModal('scaffold')">🪜 脚手架救场</button>
+      <span class="text-xs text-gray-400 ml-2">孩子卡壳时用</span>
+    </div>
+    <!-- PRINT REF: 3级故事示例 + 脚手架 -->
+    <div class="print-ref">
+      <div class="print-ref-title">📖 3级示例</div>
+      <table>
+        <thead><tr><th style="width:8%">级别</th><th>孩子说</th><th>家长反应</th></tr></thead>
+        <tbody>
+          <tr style="background:#fefce8"><td><strong>L1</strong></td><td>{{ ep.phase5.l1 }}</td><td>{{ ep.phase5.l1_response | safe }}</td></tr>
+          <tr style="background:#eff6ff"><td><strong>L2</strong></td><td>{{ ep.phase5.l2 }}</td><td>{{ ep.phase5.l2_response | safe }}</td></tr>
+          <tr style="background:#f0fdf4"><td><strong>L3</strong></td><td>{{ ep.phase5.l3 }}</td><td>{{ ep.phase5.l3_response | safe }}</td></tr>
+        </tbody>
+      </table>
+      <div class="print-ref-title" style="margin-top:3px">🪜 脚手架救场</div>
+      <table>
+        <thead><tr><th>孩子卡在哪里</th><th>家长怎么救</th></tr></thead>
+        <tbody>{% for s in ep.phase5.scaffold %}<tr><td>{{ s.stuck }}</td><td>{{ s.rescue | safe }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-base font-black text-teal-600">B. 角色扮演</h2>
+      <button class="detail-btn" onclick="openModal('roleplay5')">🎭 查看完整情境</button>
+    </div>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div class="p-3 bg-teal-50 rounded-lg border border-teal-200 text-center">
+        <div class="text-2xl">👧</div>
+        <div class="text-sm font-bold text-teal-700 mt-1">孩子 = {{ ep.phase5.roleplay_child }}</div>
+      </div>
+      <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200 text-center">
+        <div class="text-2xl">🎭</div>
+        <div class="text-sm font-bold text-yellow-700 mt-1">家长 = {{ ep.phase5.roleplay_parent }}</div>
+      </div>
+    </div>
+    <!-- PRINT REF: 角色扮演情境 -->
+    <div class="print-ref">
+      <div class="print-ref-title">🎭 角色扮演情境（孩子={{ ep.phase5.roleplay_child }} · 家长={{ ep.phase5.roleplay_parent }}）</div>
+      <table>
+        <thead><tr><th>孩子行为</th><th>家长台词</th></tr></thead>
+        <tbody>{% for s in ep.phase5.roleplay_situations %}<tr><td>{{ s.label }}</td><td>{{ s.T_line | safe }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="record-phase5" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3"><label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase5" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="讲故事达到哪个Level？角色扮演说了哪些英文？"></textarea></div>
+    <div class="mb-3 flex items-center gap-3"><label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase5" class="score-input" placeholder="选填" min="0"></div>
+    <button onclick="saveRecord('phase5')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase5" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ══════════ PHASE 6 ══════════ -->
+<div id="tab-phase6" class="tab-panel">
+  <div class="mb-2"><span class="phase-badge bg-indigo-100 text-indigo-700">🔒 LOCK 锁定收尾 · 1分钟</span></div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <div class="flex items-center justify-between mb-2">
+      <div>
+        <h2 class="text-base font-black text-indigo-600">{{ ep.phase6.phonics_title }}</h2>
+        <p class="text-xs text-gray-500 mt-0.5">以 <code>{{ ep.phase6.phonics_word }}</code> 为例</p>
+      </div>
+      <button class="detail-btn" onclick="openModal('phonics')">🔊 查看详情</button>
+    </div>
+    <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-sm text-indigo-800">
+      <strong>口诀：</strong>{{ ep.phase6.phonics_mnemonic | safe }}
+    </div>
+    <!-- PRINT REF: 发音规律表 -->
+    <div class="print-ref">
+      <div class="print-ref-title">🔊 发音规律速查</div>
+      <table>
+        <thead><tr><th>单词</th><th>错误读法</th><th>正确读法</th><th>规律</th></tr></thead>
+        <tbody>{% for r in ep.phase6.phonics_table %}<tr><td><strong>{{ r.word }}</strong></td><td>{{ r.wrong }}</td><td><strong>{{ r.right }}</strong></td><td>{{ r.rule }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-indigo-600 mb-2">下集悬念钩子（30秒）</h2>
+    <div class="script-box">{{ ep.phase6.next_script | safe }}</div>
+    <div class="mt-3 flex gap-3">
+      <div class="flex-1 p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-sm text-center">
+        <div class="font-bold text-indigo-700">👍 A</div>
+        <div class="text-gray-600 mt-1">{{ ep.phase6.next_a }}</div>
+      </div>
+      <div class="flex-1 p-3 bg-pink-50 rounded-lg border border-pink-200 text-sm text-center">
+        <div class="font-bold text-pink-700">👍 B</div>
+        <div class="text-gray-600 mt-1">{{ ep.phase6.next_b }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="record-phase6" class="record-section">
+    <h3>📝 本阶段记录</h3>
+    <div class="mb-3"><label class="block text-sm text-gray-600 mb-1">孩子的反应</label>
+      <textarea id="reaction-phase6" rows="3" class="w-full border border-pink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" placeholder="发音规则掌握了吗？下集悬念的投票结果？"></textarea></div>
+    <div class="mb-3 flex items-center gap-3"><label class="text-sm text-gray-600">今日得分</label>
+      <input type="number" id="score-phase6" class="score-input" placeholder="选填" min="0"></div>
+    <button onclick="saveRecord('phase6')" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors">保存记录</button>
+    <div id="history-phase6" class="mt-4"></div>
+  </div>
+</div>
+
+<!-- ══════════ 通关标准 ══════════ -->
+<div id="tab-summary" class="tab-panel">
+  <div class="mb-2"><span class="phase-badge bg-yellow-100 text-yellow-700">🏆 通关标准</span></div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+    <h2 class="text-base font-black text-yellow-600 mb-3">通关清单</h2>
+    <div class="space-y-2" id="checklist">
+      {% for item in ep.checklist %}
+      <label class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-gray-50 transition-colors">
+        <input type="checkbox" class="mt-0.5 w-4 h-4 accent-pink-500">
+        <span class="text-sm">{{ item | safe }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <div id="result-bar" class="mt-4 p-3 bg-pink-50 rounded-lg border border-pink-200 text-sm text-pink-700 font-medium">六项达到五项 = 本集圆满通关！</div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <h2 class="text-base font-black text-yellow-600 mb-3">核心弹药库（日常复用）</h2>
+    <div class="overflow-x-auto">
+      <table class="content-table">
+        <thead><tr><th>句子</th><th>中文</th><th>生活用法</th></tr></thead>
+        <tbody>
+          {% for a in ep.ammo %}
+          <tr><td><strong>{{ a.sentence }}</strong></td><td>{{ a.zh }}</td><td>{{ a.usage | safe }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<div class="no-print max-w-5xl mx-auto px-4 py-6 flex items-center justify-between gap-4">
+  {% if prev_ep %}
+  <a href="/ep/{{ prev_ep.num }}" class="flex-1 flex items-center gap-3 p-4 bg-white rounded-xl border border-pink-100 shadow-sm hover:shadow-md hover:border-pink-300 transition-all group">
+    <span class="text-2xl text-pink-300 group-hover:text-pink-500 transition-colors">‹</span>
+    <div>
+      <div class="text-xs text-gray-400 font-medium">上一集</div>
+      <div class="text-sm font-black text-pink-600">EP{{ prev_ep.num }} · {{ prev_ep.title_zh }}</div>
+      <div class="text-xs text-gray-400">{{ prev_ep.title_en }}</div>
+    </div>
+  </a>
+  {% else %}
+  <div class="flex-1"></div>
+  {% endif %}
+
+  <a href="/" class="flex-shrink-0 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-pink-500 rounded-lg text-sm font-semibold border border-pink-200 transition-colors">📋 目录</a>
+
+  {% if next_ep %}
+  <a href="/ep/{{ next_ep.num }}" class="flex-1 flex items-center justify-end gap-3 p-4 bg-white rounded-xl border border-pink-100 shadow-sm hover:shadow-md hover:border-pink-300 transition-all group">
+    <div class="text-right">
+      <div class="text-xs text-gray-400 font-medium">下一集</div>
+      <div class="text-sm font-black text-pink-600">EP{{ next_ep.num }} · {{ next_ep.title_zh }}</div>
+      <div class="text-xs text-gray-400">{{ next_ep.title_en }}</div>
+    </div>
+    <span class="text-2xl text-pink-300 group-hover:text-pink-500 transition-colors">›</span>
+  </a>
+  {% else %}
+  <div class="flex-1"></div>
+  {% endif %}
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="closeModalOnBg(event)">
+  <div id="modal-box">
+    <button id="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- MODAL CONTENT TEMPLATES -->
+<template id="tpl-q1">
+  <h2 class="text-lg font-black text-pink-600 mb-4">理解确认 · 问题1/2/3 应答表</h2>
+  <h3 class="font-bold text-gray-700 mb-2">问题 1 · {{ ep.phase3.q1.type_label }}</h3>
+  <table class="modal-table mb-4"><thead><tr><th>孩子回答</th><th>家长接话</th></tr></thead><tbody>
+    {% for r in ep.phase3.q1.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+  </tbody></table>
+  <h3 class="font-bold text-gray-700 mb-2">问题 2 · {{ ep.phase3.q2.type_label }}</h3>
+  <table class="modal-table mb-4"><thead><tr><th>孩子回答</th><th>家长接话</th></tr></thead><tbody>
+    {% for r in ep.phase3.q2.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+  </tbody></table>
+  <h3 class="font-bold text-gray-700 mb-2">问题 3 · {{ ep.phase3.q3.type_label }}</h3>
+  <table class="modal-table"><thead><tr><th>孩子回答</th><th>家长接话</th></tr></thead><tbody>
+    {% for r in ep.phase3.q3.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+  </tbody></table>
+</template>
+
+<template id="tpl-personal">
+  <h2 class="text-lg font-black text-pink-600 mb-4">情感连接 · 应答对照表</h2>
+  <table class="modal-table"><thead><tr><th>孩子反应</th><th>家长接话</th></tr></thead><tbody>
+    {% for r in ep.phase3.personal.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+  </tbody></table>
+</template>
+
+<template id="tpl-roleplay3">
+  <h2 class="text-lg font-black text-pink-600 mb-4">角色代入 · 应答对照表</h2>
+  <table class="modal-table"><thead><tr><th>孩子反应</th><th>家长接话</th></tr></thead><tbody>
+    {% for r in ep.phase3.role_play.rows %}<tr><td>{{ r.child | safe }}</td><td>{{ r.parent | safe }}</td></tr>{% endfor %}
+  </tbody></table>
+</template>
+
+<template id="tpl-recast">
+  <h2 class="text-lg font-black text-pink-600 mb-3">Recast 参考表</h2>
+  <p class="text-sm text-gray-600 mb-3">孩子说错时，家长不说"错了"，直接用正确形式接话。</p>
+  <table class="modal-table"><thead><tr><th>孩子说</th><th>家长 Recast</th><th>说明</th></tr></thead><tbody>
+    {% for r in ep.phase3.recast %}<tr><td>{{ r.child | safe }}</td><td>{{ r.correct | safe }}</td><td>{{ r.note }}</td></tr>{% endfor %}
+  </tbody></table>
+</template>
+
+{% for d in ep.phase4.dubbing %}
+<template id="tpl-dub{{ d.num }}">
+  <h2 class="text-lg font-black text-pink-600 mb-1">画面{{ d.num }} 配音脚手架</h2>
+  <p class="text-sm text-gray-500 mb-4">{{ d.time }} · {{ d.scene }}</p>
+  <div class="level-1"><div class="text-xs font-black text-yellow-700 mb-1">Level 1 · 情绪音</div><p class="font-bold text-gray-800">{{ d.l1 }}</p>{% if d.l1_note %}<p class="text-xs text-gray-500 mt-1">{{ d.l1_note }}</p>{% endif %}</div>
+  <div class="level-2"><div class="text-xs font-black text-blue-700 mb-1">Level 2 · 关键词</div><p class="font-bold text-gray-800">{{ d.l2 }}</p></div>
+  <div class="level-3"><div class="text-xs font-black text-green-700 mb-1">Level 3 · 完整句子</div><p class="font-bold text-gray-800">{{ d.l3 | safe }}</p></div>
+</template>
+{% endfor %}
+
+<template id="tpl-bugs">
+  <h2 class="text-lg font-black text-pink-600 mb-2">Find the Bugs · 5句完整版</h2>
+  <p class="text-sm text-red-600 font-medium mb-4">⚠️ 第3句是正确原句，孩子要喊 "No bugs! Correct!"，乱喊扣1分！</p>
+  <div class="space-y-3">
+    {% for b in ep.phase4.bugs %}
+    {% if b.is_trap %}
+    <div class="p-3 bg-green-50 rounded-lg border-2 border-green-400">
+      <div class="text-xs font-black text-green-600 mb-1">句子 {{ b.num }} · ✅ 无 Bug！</div>
+      <p class="text-sm"><strong>家长原文读</strong>：{{ b.bug_line | safe }}</p>
+      <p class="text-sm mt-1 text-green-700 font-bold">孩子要喊：<span class="bg-green-200 px-2 py-0.5 rounded">"No bugs! Correct!"</span></p>
+      <p class="text-sm mt-1 text-red-500">喊错或乱喊 → 扣1分！</p>
+    </div>
+    {% else %}
+    <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+      <div class="text-xs font-black text-red-500 mb-1">句子 {{ b.num }}</div>
+      <p class="text-sm"><strong>家长读（Bug版）</strong>：{{ b.bug_line | safe }}</p>
+      <p class="text-sm mt-1 text-green-700"><strong>孩子砸桌喊</strong>：{{ b.answer }}</p>
+      {% if b.correct_line %}<p class="text-sm mt-1 text-gray-500"><strong>正确原句</strong>：{{ b.correct_line | safe }}</p>{% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</template>
+
+<template id="tpl-story">
+  <h2 class="text-lg font-black text-pink-600 mb-4">3句话讲故事 · 三级示例</h2>
+  <div class="level-1 mb-3">
+    <div class="text-xs font-black text-yellow-700 mb-1">Level 1 · 合格 — 中英混杂，3个关键词串起来就行</div>
+    <p class="font-semibold text-gray-800">{{ ep.phase5.l1 }}</p>
+    <div class="mt-2 p-2 bg-white rounded border text-xs text-gray-600">家长反应：{{ ep.phase5.l1_response | safe }}</div>
+  </div>
+  <div class="level-2 mb-3">
+    <div class="text-xs font-black text-blue-700 mb-1">Level 2 · 良好 — 全英文短句，语法不要求完全正确</div>
+    <p class="font-semibold text-gray-800">{{ ep.phase5.l2 }}</p>
+    <div class="mt-2 p-2 bg-white rounded border text-xs text-gray-600">家长反应：{{ ep.phase5.l2_response | safe }}</div>
+  </div>
+  <div class="level-3">
+    <div class="text-xs font-black text-green-700 mb-1">Level 3 · 优秀 — 有起承转合</div>
+    <p class="font-semibold text-gray-800">{{ ep.phase5.l3 }}</p>
+    <div class="mt-2 p-2 bg-white rounded border text-xs text-gray-600">家长反应：{{ ep.phase5.l3_response | safe }}</div>
+  </div>
+</template>
+
+<template id="tpl-scaffold">
+  <h2 class="text-lg font-black text-pink-600 mb-4">脚手架救场 · 孩子卡壳时用</h2>
+  <table class="modal-table"><thead><tr><th>孩子卡在哪里</th><th>家长怎么救</th></tr></thead><tbody>
+    {% for s in ep.phase5.scaffold %}<tr><td>{{ s.stuck }}</td><td>{{ s.rescue | safe }}</td></tr>{% endfor %}
+  </tbody></table>
+</template>
+
+<template id="tpl-roleplay5">
+  <h2 class="text-lg font-black text-pink-600 mb-4">角色扮演 · 完整情境清单</h2>
+  <div class="mb-3 p-3 bg-teal-50 rounded-lg border border-teal-200 text-sm">
+    <strong>孩子</strong> = {{ ep.phase5.roleplay_child }} &nbsp;｜&nbsp; <strong>家长</strong> = {{ ep.phase5.roleplay_parent }}
+  </div>
+  <div class="space-y-3">
+    {% for s in ep.phase5.roleplay_situations %}
+    <div class="p-3 bg-gray-50 rounded-lg border">
+      <div class="text-xs font-black text-gray-500 mb-1">{{ s.label }}</div>
+      <p class="text-sm font-medium text-pink-700">T：{{ s.T_line | safe }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</template>
+
+<template id="tpl-phonics">
+  <h2 class="text-lg font-black text-pink-600 mb-2">{{ ep.phase6.phonics_title }}</h2>
+  <p class="text-sm text-gray-600 mb-3">以 <code>{{ ep.phase6.phonics_word }}</code> 为例</p>
+  <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-200 text-sm mb-4">
+    <strong>口诀：</strong>{{ ep.phase6.phonics_mnemonic | safe }}
+  </div>
+  <table class="modal-table">
+    <thead><tr><th>单词</th><th>错误读法</th><th>正确读法</th><th>规律</th></tr></thead>
+    <tbody>
+      {% for r in ep.phase6.phonics_table %}<tr><td><code>{{ r.word }}</code></td><td>{{ r.wrong }}</td><td><strong>{{ r.right }}</strong></td><td>{{ r.rule }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</template>
+
+<script>
+  const EP_NUM = {{ ep.num }};
+
+  function showTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    if (btn) btn.classList.add('active');
+    const phases = ['phase1','phase2','phase3','phase4','phase5','phase6'];
+    if (phases.includes(id)) loadRecords(id);
+  }
+
+  function openModal(key) {
+    const tpl = document.getElementById('tpl-' + key);
+    if (!tpl) return;
+    document.getElementById('modal-body').innerHTML = tpl.innerHTML;
+    document.getElementById('modal-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function closeModalOnBg(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  async function saveRecord(phase) {
+    const reaction = document.getElementById('reaction-' + phase).value.trim();
+    const scoreRaw = document.getElementById('score-' + phase).value.trim();
+    const score = scoreRaw !== '' ? parseInt(scoreRaw, 10) : 0;
+    if (!reaction && scoreRaw === '') { alert('请填写孩子反应或得分后再保存～'); return; }
+    try {
+      const res = await fetch('/api/records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ep_num: EP_NUM, phase_id: phase, reaction, score })
+      });
+      if (!res.ok) throw new Error('保存失败');
+      const data = await res.json();
+      document.getElementById('reaction-' + phase).value = '';
+      document.getElementById('score-' + phase).value = '';
+      prependRecord(phase, data);
+    } catch(e) { alert('保存失败：' + e.message); }
+  }
+
+  async function loadRecords(phase) {
+    const container = document.getElementById('history-' + phase);
+    if (!container) return;
+    try {
+      const res = await fetch(`/api/records/${EP_NUM}/${phase}`);
+      const records = await res.json();
+      container.innerHTML = '';
+      if (records.length === 0) {
+        container.innerHTML = '<p class="text-xs text-gray-400 mt-2">暂无记录，完成本阶段后保存第一条吧～</p>';
+        return;
+      }
+      container.innerHTML = '<h4 class="text-sm font-bold text-gray-500 mb-2">历史记录</h4>';
+      records.forEach(r => prependRecord(phase, r, false));
+    } catch(e) { }
+  }
+
+  function prependRecord(phase, record, prepend = true) {
+    const container = document.getElementById('history-' + phase);
+    if (!container.querySelector('h4')) container.innerHTML = '<h4 class="text-sm font-bold text-gray-500 mb-2">历史记录</h4>';
+    const noMsg = container.querySelector('p.text-gray-400');
+    if (noMsg) noMsg.remove();
+    const scoreHtml = record.score > 0 ? `<span class="score-tag">${record.score} 分</span>` : '';
+    const card = document.createElement('div');
+    card.className = 'record-card';
+    card.dataset.id = record.id;
+    card.innerHTML = `
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-2">${scoreHtml}<span class="text-xs text-gray-400">${record.created_at}</span></div>
+        <button onclick="deleteRecord('${phase}', ${record.id})" class="text-xs text-red-300 hover:text-red-500" title="删除">✕</button>
+      </div>
+      <p class="text-sm text-gray-700 leading-relaxed">${escHtml(record.reaction) || '<span class="text-gray-400 italic">（无文字记录）</span>'}</p>`;
+    if (prepend) container.insertBefore(card, container.children[1]);
+    else container.appendChild(card);
+  }
+
+  async function deleteRecord(phase, id) {
+    if (!confirm('确认删除这条记录？')) return;
+    try { await fetch('/api/records/' + id, { method: 'DELETE' });
+      const card = document.querySelector(`[data-id="${id}"]`); if (card) card.remove(); } catch(e) {}
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br/>');
+  }
+
+  document.querySelectorAll('#checklist input[type=checkbox]').forEach(cb => cb.addEventListener('change', updateResult));
+  function updateResult() {
+    const total = document.querySelectorAll('#checklist input[type=checkbox]').length;
+    const checked = document.querySelectorAll('#checklist input[type=checkbox]:checked').length;
+    const bar = document.getElementById('result-bar');
+    if (checked >= 5) { bar.className='mt-4 p-3 bg-green-50 rounded-lg border border-green-400 text-sm text-green-700 font-bold'; bar.textContent=`🎉 ${checked}/${total} 项完成 — 本集圆满通关！太棒了！`; }
+    else if (checked >= 3) { bar.className='mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-300 text-sm text-yellow-700 font-medium'; bar.textContent=`${checked}/${total} 项完成 — 继续加油！`; }
+    else { bar.className='mt-4 p-3 bg-pink-50 rounded-lg border border-pink-200 text-sm text-pink-700 font-medium'; bar.textContent=`${checked}/${total} 项完成 — 六项达到五项 = 本集圆满通关！`; }
+  }
+
+  loadRecords('phase1');
+</script>
+</body>
+</html>

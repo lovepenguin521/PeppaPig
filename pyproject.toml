@@ -1,0 +1,16 @@
+[project]
+name = "peppa-waiban"
+version = "0.1.0"
+description = "小猪佩奇外挂攻略网页"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+    "jinja2>=3.1.0",
+    "apscheduler>=3.11.2",
+    "httpx>=0.28.1",
+    "python-dotenv>=1.2.1",
+    "loguru>=0.7.3",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+]
