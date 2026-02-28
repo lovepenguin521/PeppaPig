@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ─── 配置 ─────────────────────────────────────────────────────────────────────
-DOCKER_HUB_USER="${DOCKER_HUB_USER:-your-dockerhub-username}"
+DOCKER_HUB_USER="${DOCKER_HUB_USER:-seonxp}"
 IMAGE_NAME="peppa-waiban"
 TAG="${TAG:-latest}"
 FULL_IMAGE="${DOCKER_HUB_USER}/${IMAGE_NAME}:${TAG}"
